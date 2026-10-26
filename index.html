@@ -1261,7 +1261,7 @@ function applyServerSnapshot(d){
   renderAll();
 }
 
-async function syncFromServer() {
+async async function syncFromServer() {
   if (!hasSharedServer || serverSyncBusy) return;
   serverSyncBusy = true;
   try {
@@ -4900,7 +4900,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  const who=()=>{try{return String(localStorage.getItem('fb_username')||JSON.parse(localStorage.getItem('funblok_user')||'{}').username||'Guest').slice(0,24)}catch(e){return 'Guest'}};
  function render(rows){box.innerHTML='';if(!rows.length){box.textContent='No messages yet — say hello!';return}rows.forEach(m=>{const d=document.createElement('div');d.style.cssText='padding:7px 3px;border-bottom:1px solid #26334a;overflow-wrap:anywhere';d.innerHTML='<b style="color:#65eaff">'+esc(m.username)+'</b> <small style="color:#8291ad">'+esc(new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))+'</small><div>'+esc(m.message)+'</div>';box.appendChild(d)});box.scrollTop=box.scrollHeight}
  async function load(){if(!db)return;const {data,error}=await db.from('funblok_chat_messages').select('id,room,username,message,created_at').eq('room',room).order('id',{ascending:true}).limit(100);if(error){status('Chat error: '+error.message);return}render(data||[]);status('Online • room '+room)}
- async function join(){room=String($('fb-chat-room').value||'global').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,40)||'global';$('fb-chat-room').value=room;if(channel)await db.removeChannel(channel);status('Joining…');await load();channel=db.channel('fb-chat-'+room).on('postgres_changes',{event:'INSERT',schema:'public',table:'funblok_chat_messages',filter:'room=eq.'+room},payload=>{if(payload.new?.room===room)load()}).subscribe(s=>{if(s==='SUBSCRIBED')status('Live • room '+room);if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('Live updates unavailable; retrying every 8 seconds')});if(timer)clearInterval(timer);timer=setInterval(load,8000)}
+ async async function join(){room=String($('fb-chat-room').value||'global').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,40)||'global';$('fb-chat-room').value=room;if(channel)await db.removeChannel(channel);status('Joining…');await load();channel=db.channel('fb-chat-'+room).on('postgres_changes',{event:'INSERT',schema:'public',table:'funblok_chat_messages',filter:'room=eq.'+room},payload=>{if(payload.new?.room===room)load()}).subscribe(s=>{if(s==='SUBSCRIBED')status('Live • room '+room);if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('Live updates unavailable; retrying every 8 seconds')});if(timer)clearInterval(timer);timer=setInterval(load,8000)}
  if(!window.supabase){status('Chat library failed to load. Refresh the page.');return}
  try{db=window.supabase.createClient(url,key);$('fb-chat-join').addEventListener('click',join);$('fb-chat-form').addEventListener('submit',async e=>{e.preventDefault();const message=$('fb-chat-input').value.trim();if(!message)return;const {error}=await db.from('funblok_chat_messages').insert({room,username:who(),message:message.slice(0,500)});if(error){status('Message not sent: '+error.message);return}$('fb-chat-input').value='';await load()});join()}catch(e){status('Chat failed to start: '+e.message)}
 })();
@@ -4913,12 +4913,12 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  const $=id=>document.getElementById(id);
  const esc=s=>{const d=document.createElement('div');d.textContent=s??'';return d.innerHTML};
  const DB=window.supabase?window.supabase.createClient('https://yvycanrmtfeophiinbxq.supabase.co','sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu'):null;
- async function getState(key, fallback){
+ async async function getState(key, fallback){
    if(API){try{const r=await fetch(API+'/state/'+encodeURIComponent(key),{cache:'no-store'});if(r.ok){const d=await r.json();return d.value??fallback}}catch{}}
    if(DB){try{const {data,error}=await DB.from('funblok_shared_state').select('value').eq('key',key).maybeSingle();if(!error)return data?data.value:fallback}catch(e){console.warn('Storm shared read failed',e)}}
    return fallback;
  }
- async function setState(key,value){
+ async async function setState(key,value){
    if(API){try{const r=await fetch(API+'/state/'+encodeURIComponent(key),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value})});if(r.ok)return true}catch{}}
    if(DB){try{const {error}=await DB.from('funblok_shared_state').upsert({key,value,updated_at:new Date().toISOString()},{onConflict:'key'});return !error}catch(e){console.warn('Storm shared write failed',e)}}
    return false;
