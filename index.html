@@ -524,6 +524,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     <a data-page="account">Account</a>
     <a data-page="catalog">Catalog</a>
     <a data-page="forums">Forums</a>
+    <a data-page="chat">💬 Chat</a>
     <a data-page="players">Players</a>
     <a data-page="groups">Groups</a>
     <a data-page="marketplace">Marketplace</a>
@@ -894,6 +895,16 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
 </div>
 
 <!-- FORUMS -->
+<div class="page" id="page-chat">
+  <div class="panel"><div class="panel-title">💬 FunBlok Live Chat</div><div class="panel-body">
+    <p>Messages sync online between devices. Keep personal information private.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><input id="fb-chat-room" value="global" maxlength="40" placeholder="Room name" style="flex:1;padding:10px"><button class="btn btn-outline" id="fb-chat-join" type="button">Join room</button></div>
+    <div id="fb-chat-status" role="status" style="padding:8px;margin-bottom:8px">Connecting…</div>
+    <div id="fb-chat-messages" aria-live="polite" style="height:350px;overflow:auto;border:1px solid #33445f;border-radius:8px;padding:10px;background:#080f20;color:#eaf7ff;margin-bottom:10px">Loading messages…</div>
+    <form id="fb-chat-form" style="display:flex;gap:8px"><input id="fb-chat-input" maxlength="500" required placeholder="Write a message…" style="flex:1;min-width:0;padding:11px"><button class="btn" type="submit">Send</button></form>
+  </div></div>
+</div>
+
 <div class="page" id="page-forums">
   <div class="panel">
     <div class="panel-title">Forums</div>
@@ -4493,6 +4504,24 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     <div class="fb-storm-card"><h3>⌨️ Studio power keys</h3><div class="fb-storm-muted">When Studio is active: <b>W</b> move, <b>E</b> rotate, <b>R</b> scale, <b>Delete</b> remove, <b>Ctrl+S</b> save. This HUD is a roadmap for the upgraded editor.</div><div class="fb-storm-actions"><button class="fb-storm-btn" id="storm-studio-help">Show Studio plan</button></div></div>
   </div>
 </section>
+
+<script id="fb-live-chat-js">
+(function(){
+ const url='https://yvycanrmtfeophiinbxq.supabase.co';
+ const key='sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu';
+ const $=id=>document.getElementById(id), box=$('fb-chat-messages');
+ if(!box||box.dataset.ready)return; box.dataset.ready='1';
+ const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
+ let db=null, channel=null, room='global', timer=null;
+ const status=s=>{$('fb-chat-status').textContent=s};
+ const who=()=>{try{return String(localStorage.getItem('fb_username')||JSON.parse(localStorage.getItem('funblok_user')||'{}').username||'Guest').slice(0,24)}catch(e){return 'Guest'}};
+ function render(rows){box.innerHTML='';if(!rows.length){box.textContent='No messages yet — say hello!';return}rows.forEach(m=>{const d=document.createElement('div');d.style.cssText='padding:7px 3px;border-bottom:1px solid #26334a;overflow-wrap:anywhere';d.innerHTML='<b style="color:#65eaff">'+esc(m.username)+'</b> <small style="color:#8291ad">'+esc(new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}))+'</small><div>'+esc(m.message)+'</div>';box.appendChild(d)});box.scrollTop=box.scrollHeight}
+ async function load(){if(!db)return;const {data,error}=await db.from('funblok_chat_messages').select('id,room,username,message,created_at').eq('room',room).order('id',{ascending:true}).limit(100);if(error){status('Chat error: '+error.message);return}render(data||[]);status('Online • room '+room)}
+ async function join(){room=String($('fb-chat-room').value||'global').trim().toLowerCase().replace(/[^a-z0-9_-]/g,'').slice(0,40)||'global';$('fb-chat-room').value=room;if(channel)await db.removeChannel(channel);status('Joining…');await load();channel=db.channel('fb-chat-'+room).on('postgres_changes',{event:'INSERT',schema:'public',table:'funblok_chat_messages',filter:'room=eq.'+room},payload=>{if(payload.new?.room===room)load()}).subscribe(s=>{if(s==='SUBSCRIBED')status('Live • room '+room);if(s==='CHANNEL_ERROR'||s==='TIMED_OUT')status('Live updates unavailable; retrying every 8 seconds')});if(timer)clearInterval(timer);timer=setInterval(load,8000)}
+ if(!window.supabase){status('Chat library failed to load. Refresh the page.');return}
+ try{db=window.supabase.createClient(url,key);$('fb-chat-join').addEventListener('click',join);$('fb-chat-form').addEventListener('submit',async e=>{e.preventDefault();const message=$('fb-chat-input').value.trim();if(!message)return;const {error}=await db.from('funblok_chat_messages').insert({room,username:who(),message:message.slice(0,500)});if(error){status('Message not sent: '+error.message);return}$('fb-chat-input').value='';await load()});join()}catch(e){status('Chat failed to start: '+e.message)}
+})();
+</script>
 
 <script id="funblok-storm-script">
 (function(){
