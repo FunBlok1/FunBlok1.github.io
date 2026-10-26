@@ -1166,6 +1166,12 @@ async function cloudGet(key, shared) {
       const {data,error}=await FUNBLOK_DB.from("funblok_shared_state").select("value").eq("key",key).maybeSingle();
       if(error){console.warn("FunBlok shared read:",error.message);return readSharedCache(key);}
       if(data && data.value !== undefined && data.value !== null) {
+        const cached=readSharedCache(key);
+        if(key===USERS_KEY && data.value && typeof data.value==="object" && !Array.isArray(data.value) && Object.keys(data.value).length===0 && cached && typeof cached==="object" && Object.keys(cached).length>0) {
+          console.warn("FunBlok ignored an empty cloud account list to protect existing accounts.");
+          cloudSet(key,cached,true);
+          return cached;
+        }
         writeSharedCache(key,data.value);
         return data.value;
       }
@@ -1292,8 +1298,8 @@ async function refreshSupabaseSharedState() {
       const {data,error} = await FUNBLOK_DB.from("funblok_shared_state").select("value").eq("key",key).maybeSingle();
       if (error) throw error;
       let next = data ? data.value : null;
-      if (next === null || next === undefined) {
-        const cached=readSharedCache(key);
+      const cached=readSharedCache(key);
+      if (next === null || next === undefined || (key==="cb_users" && next && typeof next==="object" && !Array.isArray(next) && Object.keys(next).length===0 && cached && typeof cached==="object" && Object.keys(cached).length>0)) {
         next=cached!==null ? cached : fallback;
         if(cached!==null) cloudSet(key,cached,true);
       } else {
