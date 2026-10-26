@@ -1129,6 +1129,7 @@ const FUNBLOK_DB_KEY = "sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu";
 const FUNBLOK_DB = window.supabase ? window.supabase.createClient(FUNBLOK_DB_URL, FUNBLOK_DB_KEY) : null;
 let funblokStateChannel = null;
 let funblokStatePoll = null;
+let supabaseRefreshBusy = false;
 const hasSharedServer = !!FUNBLOK_API;
 let serverSyncTimer = null;
 let serverEventSource = null;
@@ -1281,7 +1282,8 @@ async function syncFromServer() {
 }
 
 async function refreshSupabaseSharedState() {
-  if (!FUNBLOK_DB || hasSharedServer || document.hidden) return;
+  if (!FUNBLOK_DB || hasSharedServer || document.hidden || supabaseRefreshBusy) return;
+  supabaseRefreshBusy = true;
   try {
     const keys = [
       ["cb_users","usersCache",{}],
@@ -1323,6 +1325,8 @@ async function refreshSupabaseSharedState() {
   } catch (e) {
     console.warn("FunBlok cloud refresh failed", e);
     setServerStatus(false, "CLOUD SYNC RETRYING");
+  } finally {
+    supabaseRefreshBusy = false;
   }
 }
 
