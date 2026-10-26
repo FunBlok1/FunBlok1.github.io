@@ -496,7 +496,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
   function me(){try{return typeof getCurrentUser==='function'?getCurrentUser():null}catch(e){return null}}
   function xpNeeded(l){return 100+(l-1)*50}
   function addXP(n){let d=get();d.xp+=n;while(d.xp>=xpNeeded(d.level)){d.xp-=xpNeeded(d.level);d.level++;toast('🎉 Level up! You reached Level '+d.level+'!')}put(d);render()}
-  function claim(){let d=get(), today=new Date().toISOString().slice(0,10);if(d.dailyClaimed===today){toast('Daily reward already claimed. Come back tomorrow!');return}d.dailyClaimed=today;d.streak=(d.streak||0)+1;d.plays=(d.plays||0)+1;put(d);try{let u=me();if(u&&typeof giveCoinsToUser==='function')giveCoinsToUser(u.username,100)}catch(e){}addXP(50);toast('🎁 Daily reward: +100 FCoins and +50 XP!')}
+  function claim(){let d=get(), today=new Date().toISOString().slice(0,10);if(d.dailyClaimed===today){toast('Daily reward already claimed. Come back tomorrow!');return}if(!getCurrentUsername()){toast('Log in to claim your daily FCoins reward.');if(typeof showPage==='function')showPage('account');return}if(typeof addWalletCoins!=='function'||!addWalletCoins(100)){toast('Could not add FCoins. Please try again.');return}d.dailyClaimed=today;d.streak=(d.streak||0)+1;d.plays=(d.plays||0)+1;put(d);addXP(50);toast('🎁 Daily reward: +100 FCoins and +50 XP!')}
   function play(name){let d=get();d.plays++;d.quests.play=Math.min(3,(d.quests.play||0)+1);put(d);addXP(20);try{showPage('games');setTimeout(()=>{let b=[...document.querySelectorAll('#gamegrid2 button,#gamegrid2 .game-card button')].find(x=>(x.textContent||'').toLowerCase().includes(name.toLowerCase()));if(b)b.click()},250)}catch(e){showPage('games')} }
   function studio(){let d=get();d.quests.studio=Math.min(1,(d.quests.studio||0)+1);put(d);addXP(15);showPage('studio');toast('🛠️ Studio opened — build something awesome!')}
   function social(){let d=get();d.quests.social=Math.min(2,(d.quests.social||0)+1);put(d);addXP(15);showPage('forums');toast('💬 Community opened!')}
@@ -887,7 +887,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
       </p>
       <p style="font-size:12px; color:#777; margin-bottom:12px;">
         This site has no real payment processor or business behind it, so real purchases aren't possible here.
-        These buttons just simulate what a "buy coins" flow would feel like, for prototyping.
+        These buttons grant demo FCoins for testing only. They do not take payments and do not represent real-money purchases.
       </p>
       <div id="buy-fcoins-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:10px;"></div>
     </div>
@@ -3462,17 +3462,29 @@ const CURRENCY_NAME = "FCoins";
 
 function getWalletCoins() {
   const user = getCurrentUser();
-  return user ? (user.coins || 0) : 0;
+  return user ? Math.max(0, Math.floor(Number(user.coins) || 0)) : 0;
 }
+// All FCoin rewards and purchases go through this balance helper so one
+// buggy reward cannot create a negative wallet. Account records sync via cloudSet.
 function addWalletCoins(n) {
   const name = getCurrentUsername();
-  if (!name) return; // must be logged in for coins to be saved anywhere
+  const amount = Number(n);
+  if (!name || !Number.isSafeInteger(amount) || amount === 0) return false;
   const users = loadUsers();
   const key = name.toLowerCase();
-  if (!users[key]) return;
-  users[key].coins = (users[key].coins || 0) + n;
+  if (!users[key]) return false;
+  const balance = Math.max(0, Math.floor(Number(users[key].coins) || 0));
+  if (amount < 0 && balance < -amount) {
+    alert(`Not enough FCoins. You have ${balance} FCoins.`);
+    return false;
+  }
+  users[key].coins = balance + amount;
   saveUsers(users);
-  renderAuthBox();
+  if (typeof renderAuthBox === "function") renderAuthBox();
+  if (typeof renderAvatarCustomizer === "function") renderAvatarCustomizer();
+  if (typeof renderMarketplace === "function") renderMarketplace();
+  if (typeof renderHomeExtras === "function") renderHomeExtras();
+  return true;
 }
 
 /* =========================================================
@@ -3501,7 +3513,7 @@ function renderBuyFCoins() {
 function buyFCoinsDemo(amount) {
   const name = getCurrentUsername();
   if (!name) { alert("Log in first."); showPage("account"); return; }
-  if (!confirm(`This is a DEMO. No real payment will be taken. Simulate receiving ${amount} FCoins?`)) return;
+  if (!confirm(`This is a DEMO. No real payment will be taken. Add ${amount} free demo FCoins to your account?`)) return;
   addWalletCoins(amount);
   alert(`${amount} FCoins added (demo simulation — no real money was involved).`);
   renderAvatarCustomizer();
