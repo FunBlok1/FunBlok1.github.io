@@ -1091,7 +1091,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
 // Only enable the legacy shared-server sync if a real API URL is explicitly configured.
 const FUNBLOK_API = (location.protocol === "http:" || location.protocol === "https:")
   ? (typeof window.FUNBLOK_API_URL === "string" && window.FUNBLOK_API_URL.trim()
-      ? window.FUNBLOK_API_URL.trim().replace(/\\/+$/, "") : null)
+      ? window.FUNBLOK_API_URL.trim().replace(/\/+$/, "") : null)
   : null;
 const hasSharedServer = !!FUNBLOK_API;
 let serverSyncTimer = null;
