@@ -1380,8 +1380,24 @@ const USERS_KEY = "cb_users";
 const SESSION_KEY = "cb_current_user"; // intentionally local — see note above
 
 let usersCache = {};
+// Safety copy: keep the last known account list in this browser before any account write.
+const USERS_BACKUP_KEY = "cb_users_safety_backup";
 function loadUsers() { return usersCache; }
-function saveUsers(users) { usersCache = users; cloudSet(USERS_KEY, users, true); }
+function saveUsers(users) {
+  if (!users || typeof users !== "object" || Array.isArray(users)) return false;
+  const oldUsers = usersCache && typeof usersCache === "object" ? usersCache : {};
+  // Never replace a populated in-memory account list with an empty object.
+  if (Object.keys(users).length === 0 && Object.keys(oldUsers).length > 0) {
+    console.error("FunBlok blocked an empty account overwrite to protect existing accounts.");
+    return false;
+  }
+  try {
+    if (Object.keys(oldUsers).length > 0) localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users:oldUsers}));
+  } catch (e) { console.warn("Could not save local account safety copy:", e); }
+  usersCache = users;
+  cloudSet(USERS_KEY, users, true);
+  return true;
+}
 
 function getCurrentUsername() { return localStorage.getItem(SESSION_KEY); }
 function setCurrentUsername(name) {
@@ -4443,7 +4459,16 @@ async function initAppData() {
     cloudGet(LOG_KEY, true),
     cloudGet(MARKETPLACE_KEY, true),
   ]);
-  usersCache = users || {};
+  // A failed/empty response must not wipe the last known account list in memory.
+  if (users && typeof users === "object" && !Array.isArray(users)) {
+    if (Object.keys(usersCache || {}).length > 0) {
+      try { localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users:usersCache})); } catch(e) {}
+    }
+    usersCache = users;
+    if (Object.keys(users).length > 0) {
+      try { localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users})); } catch(e) {}
+    }
+  }
   announcementsCache = announcements || [];
   forumPostsCache = forumPosts || [];
   studioWorldCache = studioWorld || [];
