@@ -4613,8 +4613,17 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  const API=(typeof window.FUNBLOK_API_URL==='string'&&window.FUNBLOK_API_URL.trim())?window.FUNBLOK_API_URL.trim().replace(/\/+$/,''):null;
  const $=id=>document.getElementById(id);
  const esc=s=>{const d=document.createElement('div');d.textContent=s??'';return d.innerHTML};
- async function getState(key, fallback){ if(!API)return fallback; try{const r=await fetch(API+'/state/'+encodeURIComponent(key),{cache:'no-store'});if(r.ok){const d=await r.json();return d.value??fallback}}catch{} return fallback }
- async function setState(key,value){ if(!API)return false; try{const r=await fetch(API+'/state/'+encodeURIComponent(key),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value})});return r.ok}catch{return false} }
+ const DB=window.supabase?window.supabase.createClient('https://yvycanrmtfeophiinbxq.supabase.co','sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu'):null;
+ async function getState(key, fallback){
+   if(API){try{const r=await fetch(API+'/state/'+encodeURIComponent(key),{cache:'no-store'});if(r.ok){const d=await r.json();return d.value??fallback}}catch{}}
+   if(DB){try{const {data,error}=await DB.from('funblok_shared_state').select('value').eq('key',key).maybeSingle();if(!error)return data?data.value:fallback}catch(e){console.warn('Storm shared read failed',e)}}
+   return fallback;
+ }
+ async function setState(key,value){
+   if(API){try{const r=await fetch(API+'/state/'+encodeURIComponent(key),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({value})});if(r.ok)return true}catch{}}
+   if(DB){try{const {error}=await DB.from('funblok_shared_state').upsert({key,value,updated_at:new Date().toISOString()},{onConflict:'key'});return !error}catch(e){console.warn('Storm shared write failed',e)}}
+   return false;
+ }
  function me(){try{return typeof getCurrentUser==='function'?getCurrentUser():null}catch{return null}}
  function go(page){if(typeof showPage==='function')showPage(page)}
  async function render(){
