@@ -1107,10 +1107,11 @@ let serverLastInstantSync = 0;
 function setServerStatus(ok, message){
   serverConnected = !!ok;
   const nodes = document.querySelectorAll("#future-tools .pulse, #server-status");
+  const label = message || (ok ? "FUNBLOK SERVER ONLINE" : (hasSharedServer ? "SERVER CONNECTION LOST" : "ONLINE ROOMS IN STUDIO • LOCAL MODE FOR OTHER FEATURES"));
   nodes.forEach(el => {
     if (!el) return;
-    el.textContent = message || (ok ? "FUNBLOK SERVER ONLINE" : "OFFLINE / LOCAL MODE");
-    el.style.color = ok ? "#61ffb0" : "#ff7b9b";
+    el.textContent = label;
+    el.style.color = ok ? "#61ffb0" : (hasSharedServer ? "#ff7b9b" : "#ffd166");
   });
 }
 
@@ -1127,7 +1128,7 @@ async function cloudGet(key, shared) {
         return data.value ?? null;
       }
     } catch (e) {
-      setServerStatus(false, "SERVER CONNECTION LOST");
+      setServerStatus(false);
     }
     // Never silently switch shared data to a different browser's local copy.
     return null;
