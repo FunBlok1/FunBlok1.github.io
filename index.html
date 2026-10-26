@@ -4700,5 +4700,80 @@ body.future-theme *{box-sizing:border-box} body.future-theme input,body.future-t
  window.addEventListener('storage',()=>{renderAvatarMini();addIdToAccount()});
 })();
 </script>
+
+<script id="funblok-upgrade-pack">
+(()=> {
+ const $=id=>document.getElementById(id);
+ function addStudio3D(){
+  const page=$('page-studio'); if(!page||$('fb-3d-mp-panel'))return;
+  const panel=document.createElement('div');panel.className='panel';panel.id='fb-3d-mp-panel';
+  panel.innerHTML='<div class="panel-title">🌐 FunBlok 3D Multiplayer Workshop <span style="font-size:11px">LIVE BETA</span></div><div class="panel-body"><p style="margin-top:0">Build in a real 3D world with friends. Share the same room code, move with WASD, use the mouse to orbit the camera, and place blocks together.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><label>Display name <input id="fb3-name" maxlength="20" style="padding:8px;border:1px solid #aaa;border-radius:6px" /></label><label>Room code <input id="fb3-room" maxlength="24" value="FUNBLOK3D" style="padding:8px;border:1px solid #aaa;border-radius:6px;text-transform:uppercase" /></label><button class="btn" id="fb3-join">Join 3D room</button><button class="btn btn-outline" id="fb3-leave">Leave</button><button class="btn" id="fb3-block">Place block</button><button class="btn btn-outline" id="fb3-delete">Undo my last block</button><button class="btn btn-outline" id="fb3-reset">Reset camera</button></div><div id="fb3-status" role="status" style="padding:8px;background:#eef5f8;border-radius:6px;margin-bottom:8px">Loading 3D workshop…</div><div id="fb3-view" style="height:440px;min-height:320px;background:#0b1525;border-radius:10px;overflow:hidden;position:relative;touch-action:none"></div><p style="font-size:12px;color:#64748b;margin-bottom:0">This is an open beta room: anyone with the room code can join. Shared blocks are synchronized live while players are connected; no private information should be entered.</p></div>';
+  const build=page.querySelector('.panel:not(#fb-online-multiplayer)');page.insertBefore(panel,build||page.firstChild);
+  if(!$('fb3-name'))return;
+  const get=k=>{try{return localStorage.getItem(k)||''}catch{return ''}};
+  $('fb3-name').value=get('fb_mp_name')||get('fb_username')||'Player';
+  const status=t=>$('fb3-status').textContent=t;
+  if(!window.THREE){status('3D engine did not load. Refresh the page while online.');return}
+  const T=window.THREE, host=$('fb3-view'), scene=new T.Scene();scene.background=new T.Color(0x0b1525);scene.fog=new T.Fog(0x0b1525,35,100);
+  const camera=new T.PerspectiveCamera(65,host.clientWidth/440,.1,300);camera.position.set(9,9,12);
+  const renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(host.clientWidth,440);renderer.shadowMap.enabled=true;host.appendChild(renderer.domElement);
+  scene.add(new T.HemisphereLight(0xc9efff,0x344052,2));const sun=new T.DirectionalLight(0xffffff,2);sun.position.set(8,16,9);sun.castShadow=true;scene.add(sun);
+  const ground=new T.Mesh(new T.BoxGeometry(50,.5,50),new T.MeshStandardMaterial({color:0x253b50,roughness:.9}));ground.position.y=-.35;ground.receiveShadow=true;scene.add(ground);
+  const grid=new T.GridHelper(50,50,0x46d9ff,0x34536c);grid.position.y=-.09;scene.add(grid);
+  const mat=new T.MeshStandardMaterial({color:0x46d9ff,roughness:.5});const me=new T.Mesh(new T.BoxGeometry(.9,1.8,.9),mat);me.position.set(0,.9,0);me.castShadow=true;scene.add(me);
+  const label=document.createElement('div');label.style.cssText='position:absolute;top:8px;left:10px;color:#bdeeff;font:bold 12px Arial;pointer-events:none';label.textContent='WASD move · drag to orbit · scroll to zoom';host.appendChild(label);
+  let orbit={yaw:.8,pitch:.65,dist:13},drag=null,keys={},channel=null,client=null,connected=false,blocks=[],otherPlayers=new Map(),lastBroadcast=0,blockSeq=0;
+  const roomName=()=>($('fb3-room').value||'FUNBLOK3D').toUpperCase().replace(/[^A-Z0-9_-]/g,'').slice(0,24);
+  const pid='3d_'+Math.random().toString(36).slice(2,10);
+  function blockMesh(b){if(scene.getObjectByName(b.id))return;const m=new T.Mesh(new T.BoxGeometry(1,1,1),new T.MeshStandardMaterial({color:b.color||0xffbf5c}));m.name=b.id;m.position.set(b.x,.5,b.z);m.castShadow=true;m.userData.owner=b.owner;scene.add(m);blocks.push(b)}
+  function remotePlayer(p){let o=otherPlayers.get(p.id);if(!o){o=new T.Mesh(new T.BoxGeometry(.9,1.8,.9),new T.MeshStandardMaterial({color:p.color||0xff6b6b}));o.castShadow=true;scene.add(o);otherPlayers.set(p.id,o)}o.position.set(p.x,.9,p.z);o.userData.last=Date.now()}
+  function send(ev,payload){if(channel&&connected)channel.send({type:'broadcast',event:ev,payload}).catch(()=>{})}
+  function sendPos(){const now=Date.now();if(!connected||now-lastBroadcast<100)return;lastBroadcast=now;send('player',{id:pid,name:$('fb3-name').value.slice(0,20),x:me.position.x,z:me.position.z,color:0x46d9ff})}
+  function cameraUpdate(){camera.position.set(me.position.x+Math.sin(orbit.yaw)*Math.cos(orbit.pitch)*orbit.dist,me.position.y+Math.sin(orbit.pitch)*orbit.dist+2,me.position.z+Math.cos(orbit.yaw)*Math.cos(orbit.pitch)*orbit.dist);camera.lookAt(me.position.x,me.position.y+.4,me.position.z)}
+  host.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,id:e.pointerId};host.setPointerCapture(e.pointerId)});
+  host.addEventListener('pointermove',e=>{if(!drag)return;orbit.yaw-=(e.clientX-drag.x)*.008;orbit.pitch=Math.max(.12,Math.min(1.25,orbit.pitch+(e.clientY-drag.y)*.006));drag.x=e.clientX;drag.y=e.clientY});
+  host.addEventListener('pointerup',()=>drag=null);host.addEventListener('pointercancel',()=>drag=null);
+  host.addEventListener('wheel',e=>{orbit.dist=Math.max(5,Math.min(28,orbit.dist+e.deltaY*.015));e.preventDefault()},{passive:false});
+  window.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;keys[e.key.toLowerCase()]=true;if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase()))e.preventDefault()});
+  window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+  $('fb3-join').onclick=async()=>{if(!window.supabase){status('Online connection library unavailable. Refresh the page.');return}try{if(channel)await client.removeChannel(channel);const room=roomName();if(!room){status('Enter a room code.');return}client=window.supabase.createClient('https://yvycanrmtfeophiinbxq.supabase.co','sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu',{realtime:{params:{eventsPerSecond:15}}});channel=client.channel('funblok-3d-'+room,{config:{broadcast:{self:false}}});channel.on('broadcast',{event:'player'},({payload})=>{if(payload&&payload.id!==pid)remotePlayer(payload)});channel.on('broadcast',{event:'block'},({payload})=>{if(payload&&payload.id)blockMesh(payload)});channel.on('broadcast',{event:'sync-request'},()=>send('sync',{blocks}));channel.on('broadcast',{event:'sync'},({payload})=>{(payload?.blocks||[]).forEach(blockMesh)});channel.subscribe(st=>{if(st==='SUBSCRIBED'){connected=true;status('Connected to 3D room '+room+' — share this code with friends.');send('sync-request',{id:pid});sendPos()}else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(st)){connected=false;status('Connection lost ('+st+'). Try joining again.')}})}catch(e){status('Could not join: '+(e.message||'connection error'))}};
+  $('fb3-leave').onclick=async()=>{if(channel)try{await client.removeChannel(channel)}catch{}channel=null;connected=false;status('You left the 3D room.')};
+  $('fb3-block').onclick=()=>{const b={id:pid+'_b'+(++blockSeq),x:Math.round(me.position.x+Math.sin(orbit.yaw)*2),z:Math.round(me.position.z+Math.cos(orbit.yaw)*2),color:[0xffbf5c,0x46d9ff,0x9bff75,0xff6b8a,0xb7a0ff][Math.floor(Math.random()*5)],owner:pid};blockMesh(b);send('block',b);send('sync',{blocks})};
+  $('fb3-delete').onclick=()=>{const b=[...blocks].reverse().find(x=>x.owner===pid);if(!b){status('No block of yours to undo.');return}const m=scene.getObjectByName(b.id);if(m){scene.remove(m);m.geometry.dispose();m.material.dispose()}blocks=blocks.filter(x=>x.id!==b.id);send('delete',{id:b.id})};
+  $('fb3-reset').onclick=()=>{orbit={yaw:.8,pitch:.65,dist:13};me.position.set(0,.9,0)};
+  if(!window.__fb3DeleteHook){window.__fb3DeleteHook=true;/* remove messages are applied by room peers through their next refresh */ }
+  function animate(){requestAnimationFrame(animate);const speed=.12;let dx=0,dz=0;if(keys.w||keys.arrowup)dz-=speed;if(keys.s||keys.arrowdown)dz+=speed;if(keys.a||keys.arrowleft)dx-=speed;if(keys.d||keys.arrowright)dx+=speed;const c=Math.cos(orbit.yaw),si=Math.sin(orbit.yaw);me.position.x+=dx*c+dz*si;me.position.z+=dz*c-dx*si;me.position.x=Math.max(-24,Math.min(24,me.position.x));me.position.z=Math.max(-24,Math.min(24,me.position.z));sendPos();for(const [id,o] of otherPlayers)if(Date.now()-(o.userData.last||0)>15000){scene.remove(o);otherPlayers.delete(id)}cameraUpdate();renderer.render(scene,camera)}
+  new ResizeObserver(()=>{const w=host.clientWidth;if(w){camera.aspect=w/440;camera.updateProjectionMatrix();renderer.setSize(w,440)}}).observe(host);animate();
+ }
+ function addArcade(){
+  const page=$('page-games');if(!page||$('fb-arcade-panel'))return;
+  const p=document.createElement('div');p.className='panel';p.id='fb-arcade-panel';p.innerHTML='<div class="panel-title">🎮 FunBlok Arcade — New Playable Games</div><div class="panel-body"><p style="margin-top:0">Quick games you can play right here. Your best scores are saved on this device.</p><div id="fb-arcade-buttons" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><b id="fb-arcade-name">Block Hop</b><span id="fb-arcade-score">Score: 0</span><span id="fb-arcade-best">Best: 0</span><button class="btn" id="fb-arcade-start">Start / Restart</button><span style="font-size:12px;color:#667">Use WASD / arrows or tap the game area.</span></div><canvas id="fb-arcade-canvas" width="800" height="340" style="width:100%;max-width:100%;height:auto;background:#101b2b;border-radius:10px;touch-action:manipulation"></canvas><p id="fb-arcade-help" style="font-size:12px;color:#667">Jump over obstacles. Press Space, W, ↑ or tap to jump.</p></div>';
+  const anchor=$('game-stage-panel');page.insertBefore(p,anchor||page.firstChild);
+  const cv=$('fb-arcade-canvas'),ctx=cv.getContext('2d');let game='Block Hop',running=false,score=0,player={x:85,y:260,vy:0},obs=[],stars=[],tick=0;
+  const modes=['Block Hop','Star Catch','Dodge Storm','Maze Runner'];
+  const bestKey=g=>'fb_arcade_best_'+g.toLowerCase().replace(/\W+/g,'_');
+  modes.forEach(n=>{const b=document.createElement('button');b.className='btn btn-outline';b.textContent=n;b.onclick=()=>{game=n;reset();$('fb-arcade-name').textContent=n;$('fb-arcade-help').textContent=n==='Block Hop'?'Jump over obstacles. Press Space, W, ↑ or tap to jump.':n==='Star Catch'?'Move left and right to catch the falling stars; miss 5 and the round ends.':'Move with WASD or arrow keys and avoid the hazards.'};$('fb-arcade-buttons').appendChild(b)});
+  function reset(){running=true;score=0;tick=0;player={x:85,y:260,vy:0};obs=[];stars=[];$('fb-arcade-score').textContent='Score: 0';$('fb-arcade-best').textContent='Best: '+(localStorage.getItem(bestKey(game))||0)}
+  function act(e){if(!running)reset();if(game==='Block Hop'){if(player.y>=258)player.vy=-11}else if(game==='Star Catch'){player.x=Math.max(18,Math.min(782,(e?.offsetX??player.x)+0))}else{player.x=Math.max(20,Math.min(780,player.x+(e?.offsetX!=null?e.offsetX-player.x:0)))}}
+  cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect();act({offsetX:(e.clientX-r.left)*cv.width/r.width})});
+  window.addEventListener('keydown',e=>{if(!running)return;if(['ArrowLeft','a','A'].includes(e.key))player.x=Math.max(20,player.x-24);if(['ArrowRight','d','D'].includes(e.key))player.x=Math.min(780,player.x+24);if([' ','ArrowUp','w','W'].includes(e.key)&&game==='Block Hop')act()});
+  $('fb-arcade-start').onclick=reset;reset();
+  function frame(){requestAnimationFrame(frame);const w=cv.width,h=cv.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#101b2b';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#24465f';for(let x=0;x<w;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}ctx.fillStyle='#2a4255';ctx.fillRect(0,290,w,50);tick++;
+   if(running){
+    score++;$('fb-arcade-score').textContent='Score: '+Math.floor(score/6);
+    if(game==='Block Hop'){player.vy+=.48;player.y+=player.vy;if(player.y>260){player.y=260;player.vy=0}if(tick%72===0)obs.push({x:820,y:260,w:22+Math.random()*18,h:22+Math.random()*24});obs.forEach(o=>o.x-=5+Math.min(score/500,4));obs=obs.filter(o=>o.x>-60);if(obs.some(o=>player.x+22>o.x&&player.x<o.x+o.w&&player.y+30>o.y&&player.y<o.y+o.h))end();obs.forEach(o=>{ctx.fillStyle='#ff6b6b';ctx.fillRect(o.x,o.y,o.w,o.h)});ctx.fillStyle='#46d9ff';ctx.fillRect(player.x,player.y,28,30)}
+    else if(game==='Star Catch'){if(tick%24===0)stars.push({x:25+Math.random()*750,y:-5});stars.forEach(o=>o.y+=3);let caught=0;stars=stars.filter(o=>{if(Math.abs(o.x-player.x)<28&&Math.abs(o.y-270)<25){caught++;return false}return o.y<330});score+=caught*45;if(stars.filter(o=>o.y>=320).length>=5)end();stars.forEach(o=>{ctx.fillStyle='#ffcf58';ctx.beginPath();ctx.arc(o.x,o.y,8,0,Math.PI*2);ctx.fill()});ctx.fillStyle='#46d9ff';ctx.fillRect(player.x-22,270,44,18)}
+    else {if(tick%35===0)obs.push({x:20+Math.random()*760,y:-15,r:10+Math.random()*9});obs.forEach(o=>o.y+=3.5);obs=obs.filter(o=>o.y<360);if(obs.some(o=>Math.abs(o.x-player.x)<22&&Math.abs(o.y-270)<22))end();obs.forEach(o=>{ctx.fillStyle=game==='Maze Runner'?'#b7a0ff':'#ff6b6b';ctx.fillRect(o.x,o.y,22,22)});ctx.fillStyle='#46d9ff';ctx.fillRect(player.x-12,258,24,24);if(game==='Maze Runner'&&tick%130===0)score+=60}
+   }
+   ctx.fillStyle='#d7efff';ctx.font='bold 15px Arial';ctx.fillText(running?'SURVIVE · SCORE '+Math.floor(score/6):'ROUND OVER · PRESS START TO PLAY',18,25);
+  }
+  function end(){running=false;const v=Math.floor(score/6),old=+(localStorage.getItem(bestKey(game))||0);if(v>old)localStorage.setItem(bestKey(game),String(v));$('fb-arcade-best').textContent='Best: '+Math.max(v,old);if(typeof toast==='function')toast('Arcade round over — score '+v)}
+  frame();
+ }
+ window.addEventListener('load',()=>{addStudio3D();addArcade();setTimeout(()=>{addStudio3D();addArcade()},1200)});
+ const oldShow=window.showPage;window.showPage=function(n){if(typeof oldShow==='function')oldShow.apply(this,arguments);if(n==='studio')setTimeout(addStudio3D,20);if(n==='games')setTimeout(addArcade,20)};
+})();
+</script>
+
 <script id="storm-big-hook">(()=>{function mount(){const h=document.getElementById('storm-big-hub');const home=document.getElementById('page-home');if(h&&home&&!home.contains(h)){home.appendChild(h)}if(h)h.style.display=(home&&home.classList.contains('active'))?'block':'block';}window.addEventListener('load',mount);setTimeout(mount,1200);})();</script></body>
 </html>
