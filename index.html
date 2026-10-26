@@ -735,7 +735,8 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     const keyMap={ArrowUp:[0,-10],w:[0,-10],W:[0,-10],ArrowDown:[0,10],s:[0,10],S:[0,10],ArrowLeft:[-10,0],a:[-10,0],A:[-10,0],ArrowRight:[10,0],d:[10,0],D:[10,0]};
     window.addEventListener('keydown',e=>{if(!connected)return;if(keyMap[e.key]&& !/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();move(...keyMap[e.key])}});
     document.querySelectorAll('[data-mp-move]').forEach(b=>b.addEventListener('click',()=>{if(!connected){status('Join a room first.');return}const m=b.dataset.mpMove;move(m==='left'?-12:m==='right'?12:0,m==='up'?-12:m==='down'?12:0)}));
-    let lastTrack=0;setInterval(()=>{if(connected&&channel){const now=Date.now();if(now-lastTrack>1000){lastTrack=now;channel.track(state()).catch(()=>{})}sendPos()}},80);
+    // Broadcast movement at a modest rate; never call Presence.track in this demo.
+    setInterval(()=>{if(connected&&channel)sendPos()},180);
     draw();
   })();
   </script>
