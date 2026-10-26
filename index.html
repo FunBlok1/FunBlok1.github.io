@@ -4987,5 +4987,108 @@ table{max-width:100%;border-collapse:collapse}
   poll();
 })();
 </script>
+
+<style id="funblok-tv-mode-css">
+:root{--ftv-focus:#29b8ff}
+body.ftv-mode{font-size:20px;line-height:1.5}
+body.ftv-mode #header{position:sticky;top:0;z-index:99980}
+body.ftv-mode button,body.ftv-mode a,body.ftv-mode input,body.ftv-mode select,body.ftv-mode textarea,[data-ftv-focusable]{scroll-margin:110px}
+body.ftv-mode button,body.ftv-mode a,body.ftv-mode input,body.ftv-mode select{min-height:44px}
+body.ftv-mode :focus-visible{outline:4px solid var(--ftv-focus)!important;outline-offset:4px!important;box-shadow:0 0 0 3px #00182b!important}
+body.ftv-mode .gamecard:focus,body.ftv-mode .gamecard:focus-visible{transform:scale(1.025);border-color:var(--ftv-focus);box-shadow:0 0 0 4px var(--ftv-focus)}
+#funblok-tv-toolbar{position:fixed;top:12px;right:12px;z-index:100002;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 24px);font:14px/1.35 Arial,sans-serif}
+#funblok-tv-toolbar button{border:2px solid #9adfff;border-radius:12px;background:#10273c;color:white;padding:10px 13px;min-height:44px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px #0004}
+#funblok-tv-toolbar button:focus-visible{outline:4px solid #29b8ff;outline-offset:3px}
+#funblok-tv-status{background:#10273c;color:#fff;border-radius:10px;padding:8px 11px;max-width:260px}
+#funblok-tv-voice-panel{position:fixed;inset:auto 12px 12px 12px;z-index:100003;display:none;margin:auto;max-width:560px;background:#10273c;color:#fff;border:2px solid #29b8ff;border-radius:16px;padding:16px;box-shadow:0 8px 36px #0008;font:16px/1.5 Arial,sans-serif}
+#funblok-tv-voice-panel button{padding:10px 14px;min-height:44px;border-radius:10px;border:0;font-weight:bold;margin:4px;cursor:pointer}
+body.ftv-mode #funblok-touch-controller{bottom:18px;opacity:.96}
+@media(min-width:900px){body.ftv-mode .page{max-width:1500px;margin-left:auto;margin-right:auto}body.ftv-mode #gamegrid,body.ftv-mode #gamegrid2{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}}
+@media(prefers-reduced-motion:reduce){body.ftv-mode *{scroll-behavior:auto!important}}
+</style>
+<div id="funblok-tv-toolbar" aria-label="TV mode controls">
+  <button id="funblok-tv-toggle" type="button" aria-pressed="false">📺 TV mode</button>
+  <button id="funblok-tv-voice" type="button">🎙 Voice commands</button>
+  <span id="funblok-tv-status" role="status" aria-live="polite">TV controls ready · Press Tab to navigate</span>
+</div>
+<div id="funblok-tv-voice-panel" role="dialog" aria-modal="false" aria-labelledby="funblok-tv-voice-title">
+  <h2 id="funblok-tv-voice-title" style="margin-top:0">FunBlok voice controls</h2>
+  <p id="funblok-tv-voice-status">Voice commands work only in browsers that support speech recognition and grant microphone permission.</p>
+  <p><b>Try saying:</b> “Home”, “Games”, “Studio”, “Account”, “Scroll down”, “Jump”, “Left”, “Right”, “Stop listening”.</p>
+  <button id="funblok-tv-listen" type="button">Start listening</button>
+  <button id="funblok-tv-close" type="button">Close</button>
+</div>
+<script id="funblok-tv-mode-js">
+(()=> {
+ if(window.__funblokTVModeInstalled)return;window.__funblokTVModeInstalled=true;
+ const $=id=>document.getElementById(id),status=$('funblok-tv-status'),toggle=$('funblok-tv-toggle'),voice=$('funblok-tv-voice'),panel=$('funblok-tv-voice-panel'),voiceStatus=$('funblok-tv-voice-status'),listen=$('funblok-tv-listen');
+ let tv=false,recognition=null,listening=false;
+ function sayStatus(s){if(status)status.textContent=s}
+ function enableTV(on){
+  tv=!!on;document.body.classList.toggle('ftv-mode',tv);toggle.setAttribute('aria-pressed',String(tv));toggle.textContent=tv?'📺 Exit TV mode':'📺 TV mode';
+  if(tv){sayStatus('TV mode on · Use remote arrows, OK/Enter, Backspace or a controller');setTimeout(()=>{const first=document.querySelector('#navlinks a, #navlinks button, .gamecard, .btn, button, a[href]');if(first)first.focus({preventScroll:true})},80)}
+  else sayStatus('TV mode off');
+  try{localStorage.setItem('funblok_tv_mode',tv?'1':'0')}catch(_){}
+ }
+ toggle.addEventListener('click',()=>enableTV(!tv));
+ try{if(localStorage.getItem('funblok_tv_mode')==='1')enableTV(true)}catch(_){}
+ function visible(el){return !!(el&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden'&&getComputedStyle(el).display!=='none')}
+ function focusables(){return [...document.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),.gamecard')].filter(el=>visible(el)&&!el.closest('#funblok-tv-toolbar')&&!el.closest('#funblok-tv-voice-panel'))}
+ function navFocus(dx,dy){
+  const list=focusables();if(!list.length)return;
+  const cur=document.activeElement,rect=cur&&cur.getBoundingClientRect?cur.getBoundingClientRect():null;
+  if(!rect||!list.includes(cur)){list[0].focus();return}
+  const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+  const candidates=list.filter(el=>el!==cur).map(el=>{const r=el.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2,along=dx?(x-cx)*dx:(y-cy)*dy,cross=dx?Math.abs(y-cy):Math.abs(x-cx);return {el,along,cross,dist:Math.hypot(x-cx,y-cy)}}).filter(v=>v.along>4).sort((a,b)=>(a.along+a.cross*1.65)-(b.along+b.cross*1.65));
+  if(candidates[0]){candidates[0].el.focus();candidates[0].el.scrollIntoView({block:'nearest',inline:'nearest'})}
+ }
+ document.addEventListener('keydown',e=>{
+  if(!tv||e.altKey||e.ctrlKey||e.metaKey)return;
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
+   const target=e.target,tag=target&&target.tagName;
+   if(['INPUT','TEXTAREA','SELECT'].includes(tag))return;
+   e.preventDefault();navFocus(e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0,e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0);
+  }else if(e.key==='Escape'||e.key==='Backspace'){
+   if(panel.style.display==='block'){panel.style.display='none';voice.focus();e.preventDefault();return}
+   const back=document.querySelector('#game-stage-panel button, #game-stage-panel a, #page-games button, #navlinks a');
+   if(back&&visible(back)&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){back.focus();sayStatus('Back / return control focused')}
+  }else if(e.key==='Enter'&&document.activeElement&&document.activeElement.classList.contains('gamecard')){
+   e.preventDefault();document.activeElement.click();
+  }
+ });
+ function navPage(page){
+  if(typeof window.showPage==='function'){window.showPage(page);sayStatus('Opened '+page)}
+  else{const a=[...document.querySelectorAll('a')].find(x=>(x.getAttribute('href')||'').endsWith('#'+page)||x.textContent.trim().toLowerCase()===page);if(a){a.click();sayStatus('Opened '+page)}else sayStatus('Could not find '+page+' navigation')}
+ }
+ function command(raw){
+  const t=String(raw||'').toLowerCase().replace(/[.!?,]/g,'').trim();if(!t)return;
+  if(t.includes('stop listening')||t==='stop'){stopListening();return}
+  if(t.includes('home')){navPage('home');return}
+  if(t.includes('game')){navPage('games');return}
+  if(t.includes('studio')){navPage('studio');return}
+  if(t.includes('account')||t.includes('profile')){navPage('account');return}
+  if(t.includes('catalog')||t.includes('shop')){navPage('catalog');return}
+  if(t.includes('forum')){navPage('forums');return}
+  if(t.includes('scroll down')){window.scrollBy({top:Math.max(300,innerHeight*.7),behavior:'smooth'});sayStatus('Scrolling down');return}
+  if(t.includes('scroll up')){window.scrollBy({top:-Math.max(300,innerHeight*.7),behavior:'smooth'});sayStatus('Scrolling up');return}
+  if(t.includes('jump')||t.includes('action')||t.includes('select')){document.dispatchEvent(new KeyboardEvent('keydown',{key:' ',code:'Space',bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{key:' ',code:'Space',bubbles:true}));sayStatus('Action command sent');return}
+  const dir=t.includes('left')?'ArrowLeft':t.includes('right')?'ArrowRight':t.includes('up')?'ArrowUp':t.includes('down')?'ArrowDown':'';
+  if(dir){document.dispatchEvent(new KeyboardEvent('keydown',{key:dir,code:dir,bubbles:true}));document.dispatchEvent(new KeyboardEvent('keyup',{key:dir,code:dir,bubbles:true}));sayStatus('Movement command sent');return}
+  sayStatus('Command not recognised: '+t.slice(0,60));
+ }
+ function stopListening(){listening=false;try{if(recognition)recognition.stop()}catch(_){}if(listen)listen.textContent='Start listening';if(voiceStatus)voiceStatus.textContent='Voice listening stopped.'}
+ function startListening(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){voiceStatus.textContent='This browser does not support built-in speech recognition. Use the TV remote or game controller instead.';return}
+  if(!recognition){recognition=new SR();recognition.lang=navigator.language||'en-GB';recognition.continuous=true;recognition.interimResults=false;recognition.onresult=e=>{const r=e.results[e.results.length-1];if(r&&r.isFinal)command(r[0].transcript)};recognition.onerror=e=>{voiceStatus.textContent='Voice error: '+(e.error||'microphone unavailable')+'. Check browser microphone permissions.'};recognition.onend=()=>{if(listening){try{recognition.start()}catch(_){}}else{listen.textContent='Start listening'}}}
+  listening=true;voiceStatus.textContent='Listening… Say “Home”, “Games”, “Studio”, “Scroll down”, “Jump”, or “Stop listening”.';listen.textContent='Stop listening';try{recognition.start()}catch(e){voiceStatus.textContent='Could not start microphone. Check permissions and try again.'}
+ }
+ voice.addEventListener('click',()=>{panel.style.display='block';voiceStatus.textContent='Choose Start listening. Microphone support varies by TV and browser.';listen.focus()});
+ listen.addEventListener('click',()=>{if(listening)stopListening();else startListening()});
+ $('funblok-tv-close').addEventListener('click',()=>{panel.style.display='none';voice.focus()});
+ window.addEventListener('gamepadconnected',()=>sayStatus('Controller connected · TV mode supports directional navigation'));
+ window.addEventListener('gamepaddisconnected',()=>sayStatus('Controller disconnected'));
+})();
+</script>
 </body>
 </html>
