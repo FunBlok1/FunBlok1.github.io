@@ -1116,7 +1116,7 @@ const FUNBLOK_API = (location.protocol === "http:" || location.protocol === "htt
   : null;
 // Hosted Supabase shared-state fallback for GitHub Pages.
 const FUNBLOK_DB_URL = "https://yvycanrmtfeophiinbxq.supabase.co";
-const FUNBLOK_DB_KEY = "sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu";
+const FUNBLOK_DB_KEY = "sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu";
 const FUNBLOK_DB = window.supabase ? window.supabase.createClient(FUNBLOK_DB_URL, FUNBLOK_DB_KEY) : null;
 let funblokStateChannel = null;
 let funblokStatePoll = null;
@@ -4611,7 +4611,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <script id="fb-live-chat-js">
 (function(){
  const url='https://yvycanrmtfeophiinbxq.supabase.co';
- const key='sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu';
+ const key='sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu';
  const $=id=>document.getElementById(id), box=$('fb-chat-messages');
  if(!box||box.dataset.ready)return; box.dataset.ready='1';
  const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
@@ -4632,7 +4632,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  const API=(typeof window.FUNBLOK_API_URL==='string'&&window.FUNBLOK_API_URL.trim())?window.FUNBLOK_API_URL.trim().replace(/\/+$/,''):null;
  const $=id=>document.getElementById(id);
  const esc=s=>{const d=document.createElement('div');d.textContent=s??'';return d.innerHTML};
- const DB=window.supabase?window.supabase.createClient('https://yvycanrmtfeophiinbxq.supabase.co','sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu'):null;
+ const DB=window.supabase?window.supabase.createClient('https://yvycanrmtfeophiinbxq.supabase.co','sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu'):null;
  async function getState(key, fallback){
    if(API){try{const r=await fetch(API+'/state/'+encodeURIComponent(key),{cache:'no-store'});if(r.ok){const d=await r.json();return d.value??fallback}}catch{}}
    if(DB){try{const {data,error}=await DB.from('funblok_shared_state').select('value').eq('key',key).maybeSingle();if(!error)return data?data.value:fallback}catch(e){console.warn('Storm shared read failed',e)}}
@@ -4787,5 +4787,90 @@ body.future-theme *{box-sizing:border-box} body.future-theme input,body.future-t
 })();
 </script>
 
-<script id="storm-big-hook">(()=>{function mount(){const h=document.getElementById('storm-big-hub');const home=document.getElementById('page-home');if(h&&home&&!home.contains(h)){home.appendChild(h)}if(h)h.style.display=(home&&home.classList.contains('active'))?'block':'block';}window.addEventListener('load',mount);setTimeout(mount,1200);})();</script></body>
+<script id="storm-big-hook">(()=>{function mount(){const h=document.getElementById('storm-big-hub');const home=document.getElementById('page-home');if(h&&home&&!home.contains(h)){home.appendChild(h)}if(h)h.style.display=(home&&home.classList.contains('active'))?'block':'block';}window.addEventListener('load',mount);setTimeout(mount,1200);})();</script>
+<style id="funblok-stability-responsive-fix">
+/* Stability pass: keep the classic Storm look while making every section usable on small screens. */
+html{scroll-behavior:smooth;scroll-padding-top:12px}
+img,canvas,video,iframe{max-width:100%}
+input,select,textarea,button{max-width:100%;font:inherit}
+button,a,[role="button"]{-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #28a9ff;outline-offset:2px}
+table{max-width:100%;border-collapse:collapse}
+@media(max-width:760px){
+  #header{padding:10px 12px;flex-wrap:wrap;gap:8px}
+  #navlinks{display:flex;flex-wrap:wrap;gap:6px;max-width:100%}
+  #navlinks a{padding:7px 8px}
+  #authbox{max-width:100%;overflow-wrap:anywhere}
+  .page{padding:12px!important}
+  #hero{padding:32px 14px!important}
+  #hero h1{font-size:clamp(26px,7vw,40px)!important}
+  #gamegrid,#gamegrid2{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .announce-form,.form-row{max-width:100%}
+  input,select,textarea{min-width:0}
+  .table-wrap, .table-responsive{max-width:100%;overflow-x:auto}
+  #footer{padding:14px 10px;text-align:center}
+}
+@media(max-width:460px){
+  #gamegrid,#gamegrid2{grid-template-columns:minmax(0,1fr)!important}
+  #theme-switcher{margin-left:0}
+  #header{align-items:flex-start}
+  .page h1{font-size:25px}
+  .page h2{font-size:21px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+<script id="funblok-stability-guard">
+(()=> {
+  if (window.__funblokStabilityGuardInstalled) return;
+  window.__funblokStabilityGuardInstalled = true;
+  const report = (message) => {
+    try {
+      let box = document.getElementById('funblok-runtime-notice');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'funblok-runtime-notice';
+        box.setAttribute('role','status');
+        box.setAttribute('aria-live','polite');
+        box.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;max-width:620px;margin:auto;padding:11px 14px;border-radius:8px;background:#381b22;color:#fff;border:1px solid #ff7888;box-shadow:0 5px 24px #0003;font:13px/1.45 Arial,sans-serif;display:none';
+        document.body.appendChild(box);
+      }
+      box.textContent = 'FunBlok noticed a script problem. Refresh the page; if it keeps happening, tell us this message: ' + message;
+      box.style.display = 'block';
+      clearTimeout(box._hideTimer);
+      box._hideTimer = setTimeout(()=>{box.style.display='none'},9000);
+    } catch (_) {}
+  };
+  window.addEventListener('error', (event) => {
+    if (event && event.message) report(String(event.message).slice(0,180));
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event && event.reason;
+    const message = reason && reason.message ? reason.message : String(reason || 'Unknown network request error');
+    report(message.slice(0,180));
+  });
+  window.addEventListener('offline',()=> {
+    let box=document.getElementById('funblok-runtime-notice');
+    if(!box){report('Your device is offline');box=document.getElementById('funblok-runtime-notice')}
+    if(box){box.textContent='You are offline. Local games may still work, but shared data and multiplayer need an internet connection.';box.style.display='block'}
+  });
+  window.addEventListener('online',()=> {
+    const box=document.getElementById('funblok-runtime-notice');
+    if(box){box.textContent='Connection restored. Refresh if online features do not reconnect.';box.style.display='block';clearTimeout(box._hideTimer);box._hideTimer=setTimeout(()=>box.style.display='none',5000)}
+  });
+  // Prevent invalid page IDs from throwing and leaving the app in a broken navigation state.
+  const originalShowPage = window.showPage;
+  if (typeof originalShowPage === 'function' && !originalShowPage.__funblokGuarded) {
+    const guarded = function(name) {
+      const target = document.getElementById('page-' + String(name || ''));
+      if (!target) { report('Unknown page: ' + String(name || '(empty)').slice(0,60)); return; }
+      return originalShowPage.apply(this, arguments);
+    };
+    guarded.__funblokGuarded = true;
+    window.showPage = guarded;
+  }
+})();
+</script>
+</body>
 </html>
