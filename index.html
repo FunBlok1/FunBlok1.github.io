@@ -665,11 +665,15 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     const stored = key => { try{return localStorage.getItem(key)||''}catch(e){return ''} };
     // FunBlok's public Supabase project settings. Publishable key is designed for browser use.
     const DEFAULT_URL = 'https://yvycanrmtfeophiinbxq.supabase.co';
-    const DEFAULT_KEY = 'sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu';
-    $(ids.url).value = stored('fb_mp_supabase_url') || DEFAULT_URL;
-    $(ids.key).value = stored('fb_mp_supabase_key') || DEFAULT_KEY;
+    // Use the verified, enabled legacy anon key for Realtime compatibility.
+    const DEFAULT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2eWNhbnJtdGZlb3BoaWluYnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjE4ODEsImV4cCI6MjEwODU5Nzg4MX0.XX5Anys4sL-9c2eMVIuwhcXfyKOG6jTiUIojwAlcul4';
+    // Old saved credentials can override defaults; replace known stale values with the current project settings.
+    const savedUrl = stored('fb_mp_supabase_url');
+    const savedKey = stored('fb_mp_supabase_key');
+    $(ids.url).value = (!savedUrl || savedUrl.includes('yvycanrmtfeophiinbxq')) ? DEFAULT_URL : savedUrl;
+    $(ids.key).value = (!savedKey || savedKey.startsWith('sb_publishable_') || savedKey === DEFAULT_KEY) ? DEFAULT_KEY : savedKey;
     $(ids.name).value = stored('fb_mp_name') || stored('fb_username') || 'Player';
-    let client=null, channel=null, myId='p'+Math.random().toString(36).slice(2,10), connected=false;
+    let client=null, channel=null, myId='p'+Math.random().toString(36).slice(2,10), connected=false, activeRoom='';
     let players=new Map(), blocks=[], x=450, y=260, lastSend=0, pendingJoin=false;
     const colors=['#46d9ff','#ff6b6b','#b7ff62','#ffbf5c','#d7a6ff','#ff8ccf'];
     const status=t=>{$('fb-mp-status').textContent=t};
@@ -695,6 +699,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     $('fb-mp-save').addEventListener('click',save);
     $('fb-mp-join').addEventListener('click',async()=>{
       const url=$(ids.url).value.trim().replace(/\/+$/,''),key=$(ids.key).value.trim(),room=clean($(ids.room).value).toUpperCase().replace(/[^A-Z0-9_-]/g,'').slice(0,24);
+      activeRoom=room;
       if(!url||!key){status('First paste your Supabase Project URL and public key, then press Save connection. Open “One-time setup” for help.');return}
       if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)){status('That URL does not look like a Supabase project URL. Copy it from Project Settings → API.');return}
       if(!room){status('Enter a room code first.');return}
@@ -717,7 +722,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
             connected=true;await channel.track(state());sendPos(true);broadcast('world-sync-request',{from:myId});
             status('Connected to room '+room+'. Share this room code with friends: '+room);
           } else if(statusText==='CHANNEL_ERROR'||statusText==='TIMED_OUT'||statusText==='CLOSED'){
-            connected=false;status('Could not connect to the room. Check the URL/key, your internet, and that Realtime is enabled in Supabase.');
+            connected=false;status('Realtime connection failed ('+statusText+'). Check internet and project status, then refresh and retry.');
           }
         });
       }catch(e){connected=false;status('Connection failed: '+(e&&e.message?e.message:'check project settings'))}
