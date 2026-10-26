@@ -4761,20 +4761,20 @@ body.future-theme *{box-sizing:border-box} body.future-theme input,body.future-t
   const page=$('page-games');if(!page||$('fb-arcade-panel'))return;
   const p=document.createElement('div');p.className='panel';p.id='fb-arcade-panel';p.innerHTML='<div class="panel-title">🎮 FunBlok Arcade — New Playable Games</div><div class="panel-body"><p style="margin-top:0">Quick games you can play right here. Your best scores are saved on this device.</p><div id="fb-arcade-buttons" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div><div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><b id="fb-arcade-name">Block Hop</b><span id="fb-arcade-score">Score: 0</span><span id="fb-arcade-best">Best: 0</span><button class="btn" id="fb-arcade-start">Start / Restart</button><span style="font-size:12px;color:#667">Use WASD / arrows or tap the game area.</span></div><canvas id="fb-arcade-canvas" width="800" height="340" style="width:100%;max-width:100%;height:auto;background:#101b2b;border-radius:10px;touch-action:manipulation"></canvas><p id="fb-arcade-help" style="font-size:12px;color:#667">Jump over obstacles. Press Space, W, ↑ or tap to jump.</p></div>';
   const anchor=$('game-stage-panel');page.insertBefore(p,anchor||page.firstChild);
-  const cv=$('fb-arcade-canvas'),ctx=cv.getContext('2d');let game='Block Hop',running=false,score=0,player={x:85,y:260,vy:0},obs=[],stars=[],tick=0;
+  const cv=$('fb-arcade-canvas'),ctx=cv.getContext('2d');let game='Block Hop',running=false,score=0,player={x:85,y:260,vy:0},obs=[],stars=[],tick=0,misses=0;
   const modes=['Block Hop','Star Catch','Dodge Storm','Maze Runner'];
   const bestKey=g=>'fb_arcade_best_'+g.toLowerCase().replace(/\W+/g,'_');
   modes.forEach(n=>{const b=document.createElement('button');b.className='btn btn-outline';b.textContent=n;b.onclick=()=>{game=n;reset();$('fb-arcade-name').textContent=n;$('fb-arcade-help').textContent=n==='Block Hop'?'Jump over obstacles. Press Space, W, ↑ or tap to jump.':n==='Star Catch'?'Move left and right to catch the falling stars; miss 5 and the round ends.':'Move with WASD or arrow keys and avoid the hazards.'};$('fb-arcade-buttons').appendChild(b)});
-  function reset(){running=true;score=0;tick=0;player={x:85,y:260,vy:0};obs=[];stars=[];$('fb-arcade-score').textContent='Score: 0';$('fb-arcade-best').textContent='Best: '+(localStorage.getItem(bestKey(game))||0)}
+  function reset(){running=true;score=0;tick=0;misses=0;player={x:85,y:260,vy:0};obs=[];stars=[];$('fb-arcade-score').textContent='Score: 0';$('fb-arcade-best').textContent='Best: '+(localStorage.getItem(bestKey(game))||0)}
   function act(e){if(!running)reset();if(game==='Block Hop'){if(player.y>=258)player.vy=-11}else if(game==='Star Catch'){player.x=Math.max(18,Math.min(782,(e?.offsetX??player.x)+0))}else{player.x=Math.max(20,Math.min(780,player.x+(e?.offsetX!=null?e.offsetX-player.x:0)))}}
   cv.addEventListener('pointerdown',e=>{const r=cv.getBoundingClientRect();act({offsetX:(e.clientX-r.left)*cv.width/r.width})});
-  window.addEventListener('keydown',e=>{if(!running)return;if(['ArrowLeft','a','A'].includes(e.key))player.x=Math.max(20,player.x-24);if(['ArrowRight','d','D'].includes(e.key))player.x=Math.min(780,player.x+24);if([' ','ArrowUp','w','W'].includes(e.key)&&game==='Block Hop')act()});
+  window.addEventListener('keydown',e=>{if(!running||!$('page-games')?.classList.contains('active'))return;if(['ArrowLeft','a','A'].includes(e.key))player.x=Math.max(20,player.x-24);if(['ArrowRight','d','D'].includes(e.key))player.x=Math.min(780,player.x+24);if([' ','ArrowUp','w','W'].includes(e.key)&&game==='Block Hop'){if(document.activeElement!==cv&&document.activeElement?.tagName==='INPUT')return;act()}});
   $('fb-arcade-start').onclick=reset;reset();
   function frame(){requestAnimationFrame(frame);const w=cv.width,h=cv.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#101b2b';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#24465f';for(let x=0;x<w;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}ctx.fillStyle='#2a4255';ctx.fillRect(0,290,w,50);tick++;
    if(running){
     score++;$('fb-arcade-score').textContent='Score: '+Math.floor(score/6);
     if(game==='Block Hop'){player.vy+=.48;player.y+=player.vy;if(player.y>260){player.y=260;player.vy=0}if(tick%72===0)obs.push({x:820,y:260,w:22+Math.random()*18,h:22+Math.random()*24});obs.forEach(o=>o.x-=5+Math.min(score/500,4));obs=obs.filter(o=>o.x>-60);if(obs.some(o=>player.x+22>o.x&&player.x<o.x+o.w&&player.y+30>o.y&&player.y<o.y+o.h))end();obs.forEach(o=>{ctx.fillStyle='#ff6b6b';ctx.fillRect(o.x,o.y,o.w,o.h)});ctx.fillStyle='#46d9ff';ctx.fillRect(player.x,player.y,28,30)}
-    else if(game==='Star Catch'){if(tick%24===0)stars.push({x:25+Math.random()*750,y:-5});stars.forEach(o=>o.y+=3);let caught=0;stars=stars.filter(o=>{if(Math.abs(o.x-player.x)<28&&Math.abs(o.y-270)<25){caught++;return false}return o.y<330});score+=caught*45;if(stars.filter(o=>o.y>=320).length>=5)end();stars.forEach(o=>{ctx.fillStyle='#ffcf58';ctx.beginPath();ctx.arc(o.x,o.y,8,0,Math.PI*2);ctx.fill()});ctx.fillStyle='#46d9ff';ctx.fillRect(player.x-22,270,44,18)}
+    else if(game==='Star Catch'){if(tick%24===0)stars.push({x:25+Math.random()*750,y:-5});stars.forEach(o=>o.y+=3);let caught=0;stars=stars.filter(o=>{if(Math.abs(o.x-player.x)<28&&Math.abs(o.y-270)<25){caught++;return false}if(o.y>=320){misses++;return false}return true});score+=caught*45;if(misses>=5)end();stars.forEach(o=>{ctx.fillStyle='#ffcf58';ctx.beginPath();ctx.arc(o.x,o.y,8,0,Math.PI*2);ctx.fill()});ctx.fillStyle='#46d9ff';ctx.fillRect(player.x-22,270,44,18)}
     else {if(tick%35===0)obs.push({x:20+Math.random()*760,y:-15,r:10+Math.random()*9});obs.forEach(o=>o.y+=3.5);obs=obs.filter(o=>o.y<360);if(obs.some(o=>Math.abs(o.x-player.x)<22&&Math.abs(o.y-270)<22))end();obs.forEach(o=>{ctx.fillStyle=game==='Maze Runner'?'#b7a0ff':'#ff6b6b';ctx.fillRect(o.x,o.y,22,22)});ctx.fillStyle='#46d9ff';ctx.fillRect(player.x-12,258,24,24);if(game==='Maze Runner'&&tick%130===0)score+=60}
    }
    ctx.fillStyle='#d7efff';ctx.font='bold 15px Arial';ctx.fillText(running?'SURVIVE · SCORE '+Math.floor(score/6):'ROUND OVER · PRESS START TO PLAY',18,25);
@@ -5106,7 +5106,7 @@ body.ftv-mode #funblok-touch-controller{bottom:18px;opacity:.96}
 <div class="panel" id="funblok-stormlands" style="display:none">
  <div class="panel-title">⚡ FunBlok Quest: Stormlands <span style="font-size:11px">NEW ADVENTURE</span></div>
  <div class="panel-body">
-  <p>Explore the Stormlands, collect FCoins, rescue lost bots, defeat storm slimes, and unlock new zones. Progress and best scores save on this device.</p>
+  <p>Explore the Stormlands, collect crystals, rescue lost bots, defeat storm slimes, and unlock new zones. Progress and best scores save on this device.</p>
   <div class="fbq-hud"><span class="fbq-pill" id="fbq-zone">Zone 1 · Greenfields</span><span class="fbq-pill" id="fbq-health">❤❤❤</span><span class="fbq-pill" id="fbq-coins">FCoins: 0</span><span class="fbq-pill" id="fbq-rescues">Bots: 0/3</span><span class="fbq-pill" id="fbq-level">Level: 1</span></div>
   <canvas id="fbq-canvas" width="960" height="540" tabindex="0" aria-label="FunBlok Quest platform adventure"></canvas>
   <div class="fbq-controls">
@@ -5136,7 +5136,7 @@ body.ftv-mode #funblok-touch-controller{bottom:18px;opacity:.96}
  const bestKey='fbq_stormlands_best';
  function init(){cv=$('fbq-canvas');ctx=cv.getContext('2d');try{best=+(localStorage.getItem(bestKey)||0)}catch(_){};bind();loadLevel(0);requestAnimationFrame(loop)}
  function loadLevel(n){level=n%levels.length;const l=levels[level];player={x:45,y:420,w:28,h:42,vx:0,vy:0,on:false,inv:0};coins=l.coins.map(([x,y])=>({x,y,got:false}));bots=l.bots.map(([x,y])=>({x,y,got:false}));enemies=l.enemies.map(([x,y])=>({x,y,home:x,alive:true,dir:Math.random()<.5?-1:1}));health=3;rescued=0;won=false;over=false;camera=0;hammer=0;frame=0;keys={};held={};$('fbq-next').style.display='none';$('fbq-message').textContent='Find all 3 lost bots, gather crystals, and reach the glowing exit!';updateHud()}
- function updateHud(){$('fbq-zone').textContent='Zone '+(level+1)+' · '+levels[level].name;$('fbq-health').textContent='❤'.repeat(Math.max(0,health))+'♡'.repeat(3-Math.max(0,health));$('fbq-coins').textContent='FCoins: '+score;$('fbq-rescues').textContent='Bots: '+rescued+'/3';$('fbq-level').textContent='Best: '+best}
+ function updateHud(){$('fbq-zone').textContent='Zone '+(level+1)+' · '+levels[level].name;$('fbq-health').textContent='❤'.repeat(Math.max(0,health))+'♡'.repeat(3-Math.max(0,health));$('fbq-coins').textContent='Crystals: '+score;$('fbq-rescues').textContent='Bots: '+rescued+'/3';$('fbq-level').textContent='Best: '+best}
  function bind(){
   window.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp',' ','a','A','d','D','w','W','f','F'].includes(e.key)&&$('page-games')?.classList.contains('active')&&panelVisible()){keys[e.key.toLowerCase()]=true;if(['ArrowLeft','ArrowRight','ArrowUp',' '].includes(e.key))e.preventDefault()}});
   window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
@@ -5184,7 +5184,7 @@ body.ftv-mode #funblok-touch-controller{bottom:18px;opacity:.96}
 
 <style id="funblok-command-center-css">
 #funblok-command-center{position:fixed;inset:0;z-index:100010;display:none;align-items:flex-start;justify-content:center;padding:10vh 16px 24px;background:rgba(5,12,24,.72);backdrop-filter:blur(7px)}
-#funblok-command-card{width:min(720px,100%);max-height:78vh;overflow:auto;background:var(--panel,#fff);color:var(--text,#222);border:1px solid #4d9ed0;border-radius:18px;box-shadow:0 24px 90px #0008;padding:16px}
+#funblok-command-card{width:min(720px,100%);max-height:78vh;overflow:auto;background:var(--card-bg,var(--panel-bg,var(--panel,#fff)));color:var(--text-color,var(--text,#222));border:1px solid #4d9ed0;border-radius:18px;box-shadow:0 24px 90px #0008;padding:16px}
 #funblok-command-search{width:100%;padding:14px 16px;border:2px solid #298ac4;border-radius:12px;font-size:18px;outline-offset:3px}
 #funblok-command-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin-top:12px}
 .funblok-command-item{display:flex;flex-direction:column;text-align:left;gap:4px;padding:12px;border:1px solid #c8d9e6;border-radius:12px;background:rgba(100,160,200,.08);color:inherit;cursor:pointer;min-height:68px}
@@ -5199,7 +5199,7 @@ body.ftv-mode #funblok-touch-controller{bottom:18px;opacity:.96}
 <div id="funblok-command-center" role="dialog" aria-modal="true" aria-label="FunBlok quick launch">
  <div id="funblok-command-card">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px"><strong style="font-size:19px">⚡ FunBlok Quick Launch</strong><button id="funblok-command-close" type="button" class="btn btn-outline" aria-label="Close quick launch">Close ✕</button></div>
-  <input id="funblok-command-search" type="search" placeholder="Search games, pages and tools…" autocomplete="off" aria-label="Search FunBlok"/>
+  <input id="funblok-command-search" type="search" placeholder="Search games, pages, chat and tools…" autocomplete="off" aria-label="Search FunBlok"/>
   <div id="funblok-command-results"></div>
   <p style="font-size:12px;opacity:.7;margin-bottom:0">Keyboard shortcut: Ctrl/⌘ + K · Escape closes this panel.</p>
  </div>
@@ -5217,6 +5217,7 @@ body.ftv-mode #funblok-touch-controller{bottom:18px;opacity:.96}
   ['👤','Avatar Catalog','Customize your character','catalog'],
   ['🛍️','Marketplace','Browse player-made items','marketplace'],
   ['💬','Forums','Join community discussions','forums'],
+  ['🗨️','Live Chat','Chat with the community','chat'],
   ['👥','Players','Discover players','players'],
   ['🏘️','Groups','Find and explore groups','groups'],
   ['💰','FCoins','Check your account and currency','account'],
