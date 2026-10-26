@@ -1250,7 +1250,13 @@ async function cloudSet(key, value, shared) {
 function applyServerSnapshot(d){
   const incomingRevision = d && d.revision != null ? String(d.revision) : null;
   if (incomingRevision !== null) serverRevisionSeen = incomingRevision;
-  usersCache = d.cb_users || {};
+  const incomingUsers = d && d.cb_users && typeof d.cb_users === "object" && !Array.isArray(d.cb_users) ? d.cb_users : {};
+  // A stale/partial server snapshot must never blank the account directory.
+  if (Object.keys(incomingUsers).length > 0 || Object.keys(usersCache || {}).length === 0) {
+    usersCache = incomingUsers;
+  } else {
+    console.warn("FunBlok ignored an empty users list in a server snapshot to protect existing accounts.");
+  }
   announcementsCache = d.cb_announcements || [];
   forumPostsCache = d.cb_forum_posts || [];
   studioWorldCache = d.cb_studio_world || [];
@@ -1301,6 +1307,11 @@ async function refreshSupabaseSharedState() {
       if (error) throw error;
       let next = data ? data.value : null;
       const cached=readSharedCache(key);
+      // Guard against an empty/stale cloud row hiding accounts already loaded in memory.
+      if (key==="cb_users" && next && typeof next==="object" && !Array.isArray(next) &&
+          Object.keys(next).length===0 && Object.keys(usersCache || {}).length>0) {
+        next=usersCache;
+      }
       if (next === null || next === undefined || (key==="cb_users" && next && typeof next==="object" && !Array.isArray(next) && Object.keys(next).length===0 && cached && typeof cached==="object" && Object.keys(cached).length>0)) {
         next=cached!==null ? cached : fallback;
         if(cached!==null) cloudSet(key,cached,true);
