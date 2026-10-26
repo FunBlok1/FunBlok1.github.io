@@ -5090,5 +5090,96 @@ body.ftv-mode #funblok-touch-controller{bottom:18px;opacity:.96}
  window.addEventListener('gamepaddisconnected',()=>sayStatus('Controller disconnected'));
 })();
 </script>
+
+<style id="funblok-stormlands-css">
+#funblok-stormlands{margin-top:16px}
+#fbq-canvas{display:block;width:100%;height:auto;max-height:65vh;aspect-ratio:16/9;background:#111c35;border-radius:14px;border:1px solid #426184;touch-action:none}
+.fbq-hud{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.fbq-pill{padding:6px 10px;border-radius:999px;background:#172d47;color:#e8f7ff;border:1px solid #345878;font-weight:700;font-size:13px}
+.fbq-controls{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:10px}
+.fbq-pad{display:flex;gap:7px}
+.fbq-pad button,.fbq-action{min-width:48px;min-height:46px;border:1px solid #5b8db8;border-radius:12px;background:#173553;color:white;font-weight:800;font-size:18px;touch-action:none;user-select:none}
+.fbq-action{padding:0 15px;font-size:14px}
+#fbq-message{min-height:1.5em;color:var(--text-color,#b9eaff)}
+@media(min-width:900px){#fbq-canvas{max-height:600px}}
+</style>
+<div class="panel" id="funblok-stormlands" style="display:none">
+ <div class="panel-title">⚡ FunBlok Quest: Stormlands <span style="font-size:11px">NEW ADVENTURE</span></div>
+ <div class="panel-body">
+  <p>Explore the Stormlands, collect FCoins, rescue lost bots, defeat storm slimes, and unlock new zones. Progress and best scores save on this device.</p>
+  <div class="fbq-hud"><span class="fbq-pill" id="fbq-zone">Zone 1 · Greenfields</span><span class="fbq-pill" id="fbq-health">❤❤❤</span><span class="fbq-pill" id="fbq-coins">FCoins: 0</span><span class="fbq-pill" id="fbq-rescues">Bots: 0/3</span><span class="fbq-pill" id="fbq-level">Level: 1</span></div>
+  <canvas id="fbq-canvas" width="960" height="540" tabindex="0" aria-label="FunBlok Quest platform adventure"></canvas>
+  <div class="fbq-controls">
+   <div class="fbq-pad"><button type="button" id="fbq-left" aria-label="Move left">◀</button><button type="button" id="fbq-right" aria-label="Move right">▶</button></div>
+   <div class="fbq-pad"><button type="button" id="fbq-jump" aria-label="Jump">⬆ Jump</button><button type="button" id="fbq-attack" aria-label="Attack">⚔ Hit</button></div>
+   <div class="fbq-pad"><button type="button" class="fbq-action" id="fbq-restart">Restart zone</button><button type="button" class="fbq-action" id="fbq-next" style="display:none">Next zone →</button></div>
+  </div>
+  <p id="fbq-message" role="status" aria-live="polite">Move with A/D or ←/→. Jump with W, ↑ or Space. Press F to swing your storm hammer.</p>
+  <p style="font-size:12px;opacity:.8">Tip: touch buttons, keyboard, or a connected game controller. This adventure is single-player; its score is local to this device.</p>
+ </div>
+</div>
+<script id="funblok-stormlands">
+(()=> {
+ if(window.__fbqInstalled)return;window.__fbqInstalled=true;
+ const $=id=>document.getElementById(id);
+ function mount(){
+  const games=$('page-games'),arcade=$('fb-arcade-panel'),panel=$('funblok-stormlands');
+  if(!games||!panel)return;
+  if(!panel.dataset.mounted){if(arcade)arcade.after(panel);else games.appendChild(panel);panel.dataset.mounted='1';init();}
+ }
+ const levels=[
+  {name:'Greenfields',sky:['#7bd9ff','#e2faff'],ground:'#3f9c64',platforms:[[0,490,960,50],[180,410,145,18],[390,345,135,18],[590,400,150,18],[780,325,125,18]],coins:[[120,450],[235,370],[285,370],[440,305],[635,360],[825,285],[875,285]],bots:[[320,450],[520,305],[720,360]],enemies:[[355,460],[555,460],[745,370]],exit:[900,430]},
+  {name:'Crystal Caves',sky:['#17244e','#4d367a'],ground:'#5d65b7',platforms:[[0,490,960,50],[140,415,135,18],[325,350,140,18],[510,410,135,18],[700,330,135,18],[825,420,135,18]],coins:[[190,375],[230,375],[375,310],[565,370],[745,290],[865,380]],bots:[[280,370],[610,365],[775,285]],enemies:[[300,460],[475,380],[660,460],[840,380]],exit:[915,430]},
+  {name:'Storm Citadel',sky:['#221d38','#a14d70'],ground:'#8d5275',platforms:[[0,490,960,50],[120,420,130,18],[300,360,135,18],[480,300,130,18],[650,365,125,18],[800,300,130,18]],coins:[[160,380],[200,380],[340,320],[520,260],[690,325],[840,260]],bots:[[270,320],[600,260],[750,325]],enemies:[[265,460],[435,330],[615,460],[765,260]],exit:[910,430]}
+ ];
+ let ctx,cv,level=0,player,coins,bots,enemies,score=0,health=3,rescued=0,won=false,over=false,frame=0,camera=0,keys={},held={},best=0,hammer=0;
+ const bestKey='fbq_stormlands_best';
+ function init(){cv=$('fbq-canvas');ctx=cv.getContext('2d');try{best=+(localStorage.getItem(bestKey)||0)}catch(_){};bind();loadLevel(0);requestAnimationFrame(loop)}
+ function loadLevel(n){level=n%levels.length;const l=levels[level];player={x:45,y:420,w:28,h:42,vx:0,vy:0,on:false,inv:0};coins=l.coins.map(([x,y])=>({x,y,got:false}));bots=l.bots.map(([x,y])=>({x,y,got:false}));enemies=l.enemies.map(([x,y])=>({x,y,home:x,alive:true,dir:Math.random()<.5?-1:1}));health=3;rescued=0;won=false;over=false;camera=0;hammer=0;frame=0;keys={};held={};$('fbq-next').style.display='none';$('fbq-message').textContent='Find all 3 lost bots, gather crystals, and reach the glowing exit!';updateHud()}
+ function updateHud(){$('fbq-zone').textContent='Zone '+(level+1)+' · '+levels[level].name;$('fbq-health').textContent='❤'.repeat(Math.max(0,health))+'♡'.repeat(3-Math.max(0,health));$('fbq-coins').textContent='FCoins: '+score;$('fbq-rescues').textContent='Bots: '+rescued+'/3';$('fbq-level').textContent='Best: '+best}
+ function bind(){
+  window.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp',' ','a','A','d','D','w','W','f','F'].includes(e.key)&&$('page-games')?.classList.contains('active')&&panelVisible()){keys[e.key.toLowerCase()]=true;if(['ArrowLeft','ArrowRight','ArrowUp',' '].includes(e.key))e.preventDefault()}});
+  window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
+  const bindHold=(id,key)=>{const b=$(id);if(!b)return;b.addEventListener('pointerdown',e=>{e.preventDefault();held[key]=true;b.setPointerCapture?.(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>held[key]=false))};
+  bindHold('fbq-left','left');bindHold('fbq-right','right');bindHold('fbq-jump','jump');bindHold('fbq-attack','attack');
+  $('fbq-restart').onclick=()=>loadLevel(level);$('fbq-next').onclick=()=>loadLevel((level+1)%levels.length);
+  cv.addEventListener('pointerdown',e=>{cv.focus();if(over||won)return;const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*cv.width;if(x>cv.width*.72)held.attack=true;else if(x<cv.width*.32)held.left=true;else if(x>cv.width*.55)held.right=true;else held.jump=true;setTimeout(()=>{held.left=held.right=held.jump=held.attack=false},170)});
+ }
+ function panelVisible(){return $('funblok-stormlands')?.style.display!=='none'}
+ function collide(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+ function hit(){if(hammer>0)return;hammer=18;let hitCount=0;enemies.forEach(e=>{if(e.alive&&Math.abs((e.home-camera)-player.x)<65&&Math.abs(e.y-player.y)<55){e.alive=false;hitCount++}});if(hitCount){score+=5*hitCount;$('fbq-message').textContent='Storm hammer hit! +'+(5*hitCount)+' crystals.';updateHud()}}
+ function loop(){
+  requestAnimationFrame(loop);if(!ctx||!panelVisible())return;frame++;const l=levels[level],w=cv.width,h=cv.height;
+  const grad=ctx.createLinearGradient(0,0,0,h);grad.addColorStop(0,l.sky[0]);grad.addColorStop(1,l.sky[1]);ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);
+  for(let i=0;i<55;i++){const x=((i*173-camera*.18)%(w+30)+w+30)%(w+30),y=(i*83)%300;ctx.fillStyle='rgba(255,255,255,'+(.15+(i%4)*.08)+')';ctx.fillRect(x,y,2+(i%3),2+(i%3))}
+  if(!over&&!won){
+   const left=keys.arrowleft||keys.a||held.left,right=keys.arrowright||keys.d||held.right,jump=keys.arrowup||keys.w||keys[' ']||held.jump,attack=keys.f||held.attack;
+   player.vx=(left?-4.2:0)+(right?4.2:0);if(jump&&player.on){player.vy=-12.2;player.on=false}if(attack)hit();if(hammer>0)hammer--;player.vy=Math.min(14,player.vy+.55);player.x+=player.vx;player.y+=player.vy;player.on=false;
+   const all=[...l.platforms.map(p=>({x:p[0],y:p[1],w:p[2],h:p[3]}))];
+   all.forEach(p=>{if(player.vy>=0&&player.x+player.w>p.x&&player.x<p.x+p.w&&player.y+player.h>=p.y&&player.y+player.h-player.vy<=p.y+8){player.y=p.y-player.h;player.vy=0;player.on=true}});
+   player.x=Math.max(0,Math.min(930,player.x));if(player.y>h+80){health--;player.x=45;player.y=410;player.vy=0;if(health<=0)finish(false)}
+   coins.forEach(c=>{if(!c.got&&Math.abs(player.x+14-c.x)<25&&Math.abs(player.y+20-c.y)<32){c.got=true;score++;updateHud()}});
+   bots.forEach(b=>{if(!b.got&&Math.abs(player.x+14-b.x)<30&&Math.abs(player.y+20-b.y)<36){b.got=true;rescued++;score+=10;$('fbq-message').textContent='Bot rescued! +10 crystals. '+(rescued===3?'Now reach the glowing exit!':'Find '+(3-rescued)+' more bot(s).');updateHud()}});
+   enemies.forEach(e=>{if(!e.alive)return;e.home+=e.dir*1.1;if(Math.abs(e.home-e.x)>55)e.dir*=-1;e.x=e.home;if(collide(player,{x:e.x,y:e.y,w:28,h:30})&&player.inv<=0){health--;player.inv=90;player.vy=-7;player.vx=player.x<e.x?-5:5;updateHud();if(health<=0)finish(false)}});
+   if(player.inv>0)player.inv--;
+   if(rescued===3&&player.x>l.exit[0]-15&&player.y>l.exit[1]-10){finish(true)}
+   camera=Math.max(0,Math.min(120,l.exit[0]-cv.width+50));
+  }
+  ctx.save();ctx.translate(-camera,0);
+  l.platforms.forEach((p,i)=>{ctx.fillStyle=l.ground;ctx.fillRect(...p);ctx.fillStyle='rgba(255,255,255,.24)';ctx.fillRect(p[0],p[1],p[2],5);for(let x=p[0]+8;x<p[0]+p[2];x+=28){ctx.fillStyle='rgba(0,0,0,.09)';ctx.fillRect(x,p[1]+8,14,4)}});
+  coins.forEach(c=>{if(c.got)return;ctx.fillStyle='#ffdc65';ctx.beginPath();ctx.arc(c.x,c.y,9+Math.sin(frame/8+c.x)*2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff4b2';ctx.fillRect(c.x-2,c.y-5,4,10)});
+  bots.forEach(b=>{if(b.got)return;ctx.fillStyle='#62eaff';ctx.fillRect(b.x-12,b.y-16,24,28);ctx.fillStyle='#18334c';ctx.fillRect(b.x-7,b.y-7,4,5);ctx.fillRect(b.x+3,b.y-7,4,5);ctx.fillStyle='#fff';ctx.fillRect(b.x-8,b.y+4,16,3)});
+  enemies.forEach(e=>{if(!e.alive)return;ctx.fillStyle='#fa638c';ctx.fillRect(e.x,e.y,28,30);ctx.fillStyle='#fff';ctx.fillRect(e.x+5,e.y+8,5,5);ctx.fillRect(e.x+18,e.y+8,5,5);ctx.fillStyle='#472447';ctx.fillRect(e.x+7,e.y+20,14,4)});
+  ctx.fillStyle='#ffe98a';ctx.shadowColor='#ffe98a';ctx.shadowBlur=22;ctx.fillRect(l.exit[0],l.exit[1],20,60);ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.fillRect(l.exit[0]+6,l.exit[1]+8,8,42);
+  if(!(player.inv>0&&frame%8<4)){ctx.fillStyle='#35c8ff';ctx.fillRect(player.x,player.y,player.w,player.h);ctx.fillStyle='#f2f8ff';ctx.fillRect(player.x+5,player.y+7,6,6);ctx.fillRect(player.x+18,player.y+7,6,6);ctx.fillStyle='#17405d';ctx.fillRect(player.x+7,player.y+23,14,4);if(hammer>0){ctx.strokeStyle='#fff0a1';ctx.lineWidth=6;ctx.beginPath();ctx.arc(player.x+14,player.y+19,35,-1.1,1.2);ctx.stroke()}}
+  ctx.restore();
+  if(won||over){ctx.fillStyle='rgba(6,12,28,.72)';ctx.fillRect(0,0,w,h);ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='bold 38px Arial';ctx.fillText(won?'ZONE CLEARED!':'TRY AGAIN',w/2,h/2-18);ctx.font='20px Arial';ctx.fillText(won?'You saved the bots. Ready for the next zone?':'Restart the zone and try a new route.',w/2,h/2+22);ctx.textAlign='left'}
+  ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(12,12,220,36);ctx.fillStyle='#fff';ctx.font='bold 15px Arial';ctx.fillText('STORMLANDS · '+l.name.toUpperCase(),22,35);
+ }
+ function finish(success){if(won||over)return;if(success){won=true;score+=25;best=Math.max(best,score);try{localStorage.setItem(bestKey,String(best))}catch(_){}$('fbq-message').textContent='Zone cleared! +25 crystals. Your adventure continues.';$('fbq-next').style.display='inline-block'}else{over=true;$('fbq-message').textContent='You ran out of hearts. Restart and try again.'}updateHud()}
+ window.addEventListener('load',()=>{mount();setTimeout(mount,1200)});
+ const oldShow=window.showPage;window.showPage=function(n){if(typeof oldShow==='function')oldShow.apply(this,arguments);if(n==='games')setTimeout(()=>{mount();const p=$('funblok-stormlands');if(p)p.style.display='block'},30);else{const p=$('funblok-stormlands');if(p)p.style.display='none'}};
+})();
+</script>
 </body>
 </html>
