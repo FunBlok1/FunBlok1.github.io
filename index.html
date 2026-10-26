@@ -4636,14 +4636,27 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  async function render(){
    const games=await getState('cb_games',[]); const list=$('storm-game-list'); $('storm-games').textContent=games.length;
    list.innerHTML=games.length?games.slice().reverse().map(g=>`<div class="fb-storm-row"><div><b>${esc(g.name)}</b><div class="fb-storm-muted">${esc(g.genre||'Adventure')} · by ${esc(g.creator||'Unknown')}</div></div><span class="fb-storm-badge">PUBLIC</span></div>`).join(''):'<div class="fb-storm-muted">No published games yet. Be the first creator.</div>';
-   try{const r=await fetch(API+'/presence',{cache:'no-store'});if(r.ok){const d=await r.json();$('storm-online').textContent=(d.online||[]).length}}catch{$('storm-online').textContent='—'}
-   try{const r=await fetch(API+'/snapshot',{cache:'no-store'});if(r.ok){const d=await r.json();$('storm-revision').textContent=d.revision??'0'}}catch{$('storm-revision').textContent='—'}
+   if(API){
+     try{const r=await fetch(API+'/presence',{cache:'no-store'});if(r.ok){const d=await r.json();$('storm-online').textContent=(d.online||[]).length}}catch{$('storm-online').textContent='—'}
+     try{const r=await fetch(API+'/snapshot',{cache:'no-store'});if(r.ok){const d=await r.json();$('storm-revision').textContent=d.revision??'0'}}catch{$('storm-revision').textContent='—'}
+   }else{
+     $('storm-online').textContent='Cloud mode';
+     const {count,error}=await DB.from('funblok_shared_state').select('key',{count:'exact',head:true});
+     $('storm-revision').textContent=error?'—':String(count??0);
+   }
  }
  $('storm-open-games').onclick=()=>go('games'); $('storm-open-studio').onclick=()=>go('studio'); $('storm-open-avatar').onclick=()=>go('catalog'); $('storm-open-players').onclick=()=>go('players'); $('storm-open-forums').onclick=()=>go('forums'); $('storm-open-groups').onclick=()=>go('groups');
  $('storm-refresh').onclick=render;
  $('storm-publish').onclick=async()=>{const name=$('storm-game-name').value.trim();const genre=$('storm-game-genre').value.trim();const desc=$('storm-game-desc').value.trim();if(!name){$('storm-publish-status').textContent='Give your game a name first.';return}const u=me();const games=await getState('cb_games',[]);games.push({id:'g_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8),name,genre:genre||'Adventure',description:desc,creator:u?.username||'Guest',createdAt:Date.now(),players:0,likes:0});const ok=await setState('cb_games',games);$('storm-publish-status').textContent=ok?'✓ Published to the shared server.':'Saved locally only — start the Node server for shared publishing.';if(ok){$('storm-game-name').value='';$('storm-game-genre').value='';$('storm-game-desc').value='';}render()};
  $('storm-studio-help').onclick=()=>alert('STUDIO UPGRADE PLAN\n\n• Explorer tree\n• Move / Rotate / Scale tools\n• Multi-select + duplicate\n• Undo / redo\n• Grid snapping\n• Spawn points + checkpoints\n• Properties inspector\n• Lighting + materials\n• Publish/version system\n• Team permissions\n\nYour current Studio remains available now.');
- render(); setInterval(render,1000);
+ render();
+ // Refresh game listings when another browser publishes a game; retain a slow fallback.
+ if(DB){
+   DB.channel('funblok-published-games')
+     .on('postgres_changes',{event:'*',schema:'public',table:'funblok_shared_state',filter:'key=eq.cb_games'},()=>render())
+     .subscribe();
+ }
+ setInterval(render,10000);
 })();
 </script>
 
