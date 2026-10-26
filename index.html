@@ -1398,6 +1398,10 @@ function getCurrentUser() {
 function signup(username, password) {
   username = username.trim();
   if (!username || !password) return "Enter a username and password.";
+  if (username.length < 3) return "Your username must be at least 3 characters.";
+  if (username.length > 24) return "Your username must be 24 characters or fewer.";
+  if (!/^[a-zA-Z0-9_ ]+$/.test(username)) return "Use only letters, numbers, spaces and underscores in your username.";
+  if (password.length < 4) return "Your password must be at least 4 characters.";
   const key = username.toLowerCase();
   const users = loadUsers();
   if (users[key]) return "That username is already taken.";
@@ -1603,15 +1607,15 @@ function renderAccountPage() {
     <div style="display:flex; gap:30px; flex-wrap:wrap;">
       <div>
         <h4 style="font-size:13px; margin:0 0 8px;">Log In</h4>
-        <div class="form-row"><label>Username</label><input type="text" id="login-username"></div>
-        <div class="form-row"><label>Password</label><input type="password" id="login-password"></div>
+        <div class="form-row"><label for="login-username">Username</label><input type="text" id="login-username" autocomplete="username" maxlength="24" required></div>
+        <div class="form-row"><label for="login-password">Password</label><input type="password" id="login-password" autocomplete="current-password" required></div>
         <button type="button" class="btn" id="login-btn">Log In</button>
         <div class="form-error" id="login-error"></div>
       </div>
       <div>
         <h4 style="font-size:13px; margin:0 0 8px;">Sign Up</h4>
-        <div class="form-row"><label>Username</label><input type="text" id="signup-username"></div>
-        <div class="form-row"><label>Password</label><input type="password" id="signup-password"></div>
+        <div class="form-row"><label for="signup-username">Username</label><input type="text" id="signup-username" autocomplete="username" minlength="3" maxlength="24" required></div>
+        <div class="form-row"><label for="signup-password">Password</label><input type="password" id="signup-password" autocomplete="new-password" minlength="4" required></div>
         <button type="button" class="btn" id="signup-btn">Create Account</button>
         <div class="form-error" id="signup-error"></div>
       </div>
@@ -1628,6 +1632,10 @@ function renderAccountPage() {
     const err = signup(document.getElementById("signup-username").value, document.getElementById("signup-password").value);
     document.getElementById("signup-error").textContent = err || "";
     if (!err) { renderAll(); showPage("home"); }
+  });
+  [["login-username","login-password","login-btn"],["login-password",null,"login-btn"],["signup-username","signup-password","signup-btn"],["signup-password",null,"signup-btn"]].forEach(([field,other,button])=>{
+    const input=document.getElementById(field);
+    if(input)input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();document.getElementById(button).click();}});
   });
 }
 
@@ -5294,5 +5302,17 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 <script id="funblok-hero-actions-js">
 (()=>{const play=document.getElementById('fb-hero-play'),create=document.getElementById('fb-hero-create'),join=document.getElementById('fb-hero-join');if(play)play.addEventListener('click',()=>showPage('games'));if(create)create.addEventListener('click',()=>showPage('studio'));if(join)join.addEventListener('click',()=>{if(typeof getCurrentUser==='function'&&getCurrentUser()){showPage('account')}else{showPage('account');document.getElementById('signup-username')?.focus()}})})();
 </script>
+<style id="funblok-account-polish">
+#auth-panel .panel-body{padding:clamp(14px,3vw,24px)}
+#auth-forms>div:first-child{gap:clamp(18px,4vw,42px)!important}
+#auth-forms>div:first-child>div{flex:1;min-width:min(100%,230px);padding:16px;border:1px solid #d7e1eb;border-radius:10px;background:linear-gradient(160deg,#fff,#f7fbff)}
+#auth-forms .form-row{margin-bottom:12px}
+#auth-forms .form-row label{display:block;margin-bottom:5px;font-size:12px;font-weight:800;color:#24435d}
+#auth-forms .form-row input{box-sizing:border-box;width:100%;max-width:340px;min-height:40px;padding:9px 10px;border:1px solid #aab9c8;border-radius:6px;font:inherit}
+#auth-forms .form-row input:focus{border-color:#00559e;box-shadow:0 0 0 3px rgba(0,85,158,.12);outline:none}
+#auth-forms .form-error{min-height:18px;margin-top:8px;color:#b42318;font-size:12px;line-height:1.5}
+#auth-forms h4{font-size:15px!important;color:#00559e!important}
+@media(max-width:520px){#auth-forms>div:first-child>div{padding:12px}}
+</style>
 </body>
 </html>
