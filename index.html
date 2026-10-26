@@ -1499,8 +1499,9 @@ function renderAuthBox() {
     ownerLink.classList.toggle("show", user.role === "owner");
     logsLink.classList.toggle("show", user.role === "admin" || user.role === "coowner" || user.role === "owner");
   } else {
-    box.innerHTML = `<button type="button" class="btn btn-outline" id="go-login-btn">Log In / Sign Up</button>`;
-    document.getElementById("go-login-btn").addEventListener("click", () => showPage("account"));
+    box.innerHTML = `<button type="button" class="btn btn-outline" id="go-login-btn">Log In</button><button type="button" class="btn" id="go-signup-btn">Sign Up</button>`;
+    document.getElementById("go-login-btn").addEventListener("click", () => { showPage("account"); setTimeout(() => document.getElementById("login-username")?.focus(), 50); });
+    document.getElementById("go-signup-btn").addEventListener("click", () => { showPage("account"); setTimeout(() => document.getElementById("signup-username")?.focus(), 50); });
     adminLink.classList.remove("show");
     coownerLink.classList.remove("show");
     ownerLink.classList.remove("show");
