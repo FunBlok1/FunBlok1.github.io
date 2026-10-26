@@ -1107,6 +1107,12 @@ const FUNBLOK_API = (location.protocol === "http:" || location.protocol === "htt
   ? (typeof window.FUNBLOK_API_URL === "string" && window.FUNBLOK_API_URL.trim()
       ? window.FUNBLOK_API_URL.trim().replace(/\/+$/, "") : null)
   : null;
+// Hosted Supabase shared-state fallback for GitHub Pages.
+const FUNBLOK_DB_URL = "https://yvycanrmtfeophiinbxq.supabase.co";
+const FUNBLOK_DB_KEY = "sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu";
+const FUNBLOK_DB = window.supabase ? window.supabase.createClient(FUNBLOK_DB_URL, FUNBLOK_DB_KEY) : null;
+let funblokStateChannel = null;
+let funblokStatePoll = null;
 const hasSharedServer = !!FUNBLOK_API;
 let serverSyncTimer = null;
 let serverEventSource = null;
@@ -1127,6 +1133,13 @@ function setServerStatus(ok, message){
 }
 
 async function cloudGet(key, shared) {
+  if (!hasSharedServer && FUNBLOK_DB && shared) {
+    try {
+      const {data,error}=await FUNBLOK_DB.from("funblok_shared_state").select("value").eq("key",key).maybeSingle();
+      if(error){console.warn("FunBlok shared read:",error.message);return null;}
+      return data ? data.value : null;
+    } catch(e){console.warn("FunBlok shared read failed",e);return null;}
+  }
   if (hasSharedServer) {
     try {
       const r = await fetch(FUNBLOK_API + "/state/" + encodeURIComponent(key), {
@@ -1149,6 +1162,16 @@ async function cloudGet(key, shared) {
 }
 
 async function cloudSet(key, value, shared) {
+  if (!hasSharedServer && FUNBLOK_DB && shared) {
+    try {
+      const {error}=await FUNBLOK_DB.from("funblok_shared_state").upsert({key,value,updated_at:new Date().toISOString()},{onConflict:"key"});
+      if(error){console.warn("FunBlok shared write:",error.message);setServerStatus(false,"ONLINE SYNC WRITE FAILED");return false;}
+      setServerStatus(true,"FUNBLOK ONLINE SYNC");
+      window.dispatchEvent(new CustomEvent("funblok:data-changed",{detail:{key,value}}));
+      try{localStorage.setItem("funblok:instant-sync",String(Date.now()));}catch(e){}
+      return true;
+    } catch(e){console.warn("FunBlok shared write failed",e);setServerStatus(false,"ONLINE SYNC UNAVAILABLE");return false;}
+  }
   if (hasSharedServer) {
     try {
       const r = await fetch(FUNBLOK_API + "/state/" + encodeURIComponent(key), {
