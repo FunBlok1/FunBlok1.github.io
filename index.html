@@ -1252,7 +1252,7 @@ async function refreshSupabaseSharedState() {
       const {data,error} = await FUNBLOK_DB.from("funblok_shared_state").select("value").eq("key",key).maybeSingle();
       if (error) throw error;
       const next = data ? data.value : fallback;
-      const current = window[variable];
+      const current = ({usersCache,announcementsCache,forumPostsCache,studioWorldCache,eventsCache,groupsCache,logCache,marketplaceCache})[variable];
       if (JSON.stringify(current) !== JSON.stringify(next)) {
         if (variable === "usersCache") usersCache = next || {};
         else if (variable === "announcementsCache") announcementsCache = next || [];
@@ -1291,6 +1291,7 @@ function startSupabaseStateSync() {
     });
   if (funblokStatePoll) clearInterval(funblokStatePoll);
   funblokStatePoll = setInterval(refreshSupabaseSharedState, 5000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshSupabaseSharedState(); });
   refreshSupabaseSharedState();
 }
 
