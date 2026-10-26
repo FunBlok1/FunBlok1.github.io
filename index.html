@@ -1280,7 +1280,7 @@ async function syncFromServer() {
   }
 }
 
-async function refreshSupabaseSharedState() {
+async async function refreshSupabaseSharedState() {
   if (!FUNBLOK_DB || hasSharedServer || document.hidden) return;
   try {
     const keys = [
@@ -4485,7 +4485,7 @@ function renderAll() {
   renderMarketplace();
 }
 
-async function initAppData() {
+async async function initAppData() {
   const [users, announcements, forumPosts, studioWorld, events, groups, log, marketplace] = await Promise.all([
     cloudGet(USERS_KEY, true),
     cloudGet(ANNOUNCE_KEY, true),
