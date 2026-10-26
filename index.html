@@ -4520,22 +4520,34 @@ async function initAppData() {
     cloudGet(LOG_KEY, true),
     cloudGet(MARKETPLACE_KEY, true),
   ]);
-  // A failed/empty response must not wipe the last known account list in memory.
+  // Recover the account directory from every safe local source before rendering panels.
+  // This prevents an empty/missing cloud response from making Players/Admin/Owner appear blank.
   if (users && typeof users === "object" && !Array.isArray(users)) {
+    let localUsers = null, backupUsers = null;
+    try { const raw=localStorage.getItem(USERS_KEY); if(raw) localUsers=JSON.parse(raw); } catch(e) {}
+    try { const raw=localStorage.getItem(USERS_BACKUP_KEY); if(raw) { const b=JSON.parse(raw); backupUsers=b && b.users; } } catch(e) {}
     const cachedUsers=readSharedCache(USERS_KEY);
-    // An empty cloud response must never replace a known non-empty account list.
-    if (Object.keys(users).length===0 && cachedUsers && typeof cachedUsers==="object" && Object.keys(cachedUsers).length>0) {
-      usersCache=cachedUsers;
-      cloudSet(USERS_KEY,cachedUsers,true);
+    const recovered = [usersCache, cachedUsers, localUsers, backupUsers].filter(v=>v && typeof v==="object" && !Array.isArray(v));
+    const merged = {};
+    // Older sources first; newest cloud data wins for matching usernames.
+    for (const source of recovered.slice().reverse()) {
+      for (const [key, value] of Object.entries(source)) {
+        if (value && typeof value==="object" && value.username) merged[key.toLowerCase()] = value;
+      }
+    }
+    for (const [key, value] of Object.entries(users)) {
+      if (value && typeof value==="object" && value.username) merged[key.toLowerCase()] = value;
+    }
+    if (Object.keys(merged).length > 0) {
+      usersCache = merged;
+      writeSharedCache(USERS_KEY, merged);
+      try { localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users:merged})); } catch(e) {}
+      if (Object.keys(users).length === 0 || Object.keys(merged).length > Object.keys(users).length) {
+        // Only push a recovered superset; never push an empty directory.
+        cloudSet(USERS_KEY, merged, true);
+      }
     } else {
-      if (Object.keys(usersCache || {}).length > 0) {
-        try { localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users:usersCache})); } catch(e) {}
-      }
       usersCache = users;
-      writeSharedCache(USERS_KEY,users);
-      if (Object.keys(users).length > 0) {
-        try { localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users})); } catch(e) {}
-      }
     }
   }
   announcementsCache = announcements || [];
