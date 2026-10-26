@@ -1148,13 +1148,35 @@ function setServerStatus(ok, message){
   });
 }
 
+// Local recovery cache for shared records. Cloud remains authoritative when it returns a record;
+// this cache prevents transient failures or missing rows from blanking a player's current browser.
+const SHARED_CACHE_PREFIX = "funblok_shared_cache:";
+function readSharedCache(key) {
+  try { const raw=localStorage.getItem(SHARED_CACHE_PREFIX+key); return raw===null ? null : JSON.parse(raw); }
+  catch(e) { return null; }
+}
+function writeSharedCache(key,value) {
+  try { localStorage.setItem(SHARED_CACHE_PREFIX+key,JSON.stringify(value)); return true; }
+  catch(e) { console.warn("FunBlok local recovery cache unavailable:",e); return false; }
+}
+
 async function cloudGet(key, shared) {
   if (!hasSharedServer && FUNBLOK_DB && shared) {
     try {
       const {data,error}=await FUNBLOK_DB.from("funblok_shared_state").select("value").eq("key",key).maybeSingle();
-      if(error){console.warn("FunBlok shared read:",error.message);return null;}
-      return data ? data.value : null;
-    } catch(e){console.warn("FunBlok shared read failed",e);return null;}
+      if(error){console.warn("FunBlok shared read:",error.message);return readSharedCache(key);}
+      if(data && data.value !== undefined && data.value !== null) {
+        writeSharedCache(key,data.value);
+        return data.value;
+      }
+      const cached=readSharedCache(key);
+      if(cached!==null) {
+        console.warn("FunBlok cloud record missing; preserving cached data and attempting recovery for",key);
+        cloudSet(key,cached,true);
+        return cached;
+      }
+      return null;
+    } catch(e){console.warn("FunBlok shared read failed",e);return readSharedCache(key);}
   }
   if (hasSharedServer) {
     try {
@@ -1164,20 +1186,22 @@ async function cloudGet(key, shared) {
       });
       if (r.ok) {
         const data = await r.json();
-        setServerStatus(true);
-        return data.value ?? null;
+        if(data.value !== undefined && data.value !== null) { writeSharedCache(key,data.value); setServerStatus(true); return data.value; }
       }
-    } catch (e) {
-      setServerStatus(false);
-    }
-    // Never silently switch shared data to a different browser's local copy.
-    return null;
+    } catch (e) { setServerStatus(false); }
+    // Retain this browser's last good copy if the shared server is temporarily unavailable.
+    return readSharedCache(key);
   }
+  const cached=readSharedCache(key);
+  if(cached!==null) return cached;
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
   catch(e) { return null; }
 }
 
 async function cloudSet(key, value, shared) {
+  // Cache before attempting a network write so a new tab can recover if the service fails.
+  writeSharedCache(key,value);
+  if (shared) { try { localStorage.setItem(key,JSON.stringify(value)); } catch(e) {} }
   if (!hasSharedServer && FUNBLOK_DB && shared) {
     try {
       const {error}=await FUNBLOK_DB.from("funblok_shared_state").upsert({key,value,updated_at:new Date().toISOString()},{onConflict:"key"});
@@ -1267,7 +1291,14 @@ async function refreshSupabaseSharedState() {
     for (const [key, variable, fallback] of keys) {
       const {data,error} = await FUNBLOK_DB.from("funblok_shared_state").select("value").eq("key",key).maybeSingle();
       if (error) throw error;
-      const next = data ? data.value : fallback;
+      let next = data ? data.value : null;
+      if (next === null || next === undefined) {
+        const cached=readSharedCache(key);
+        next=cached!==null ? cached : fallback;
+        if(cached!==null) cloudSet(key,cached,true);
+      } else {
+        writeSharedCache(key,next);
+      }
       const current = ({usersCache,announcementsCache,forumPostsCache,studioWorldCache,eventsCache,groupsCache,logCache,marketplaceCache})[variable];
       if (JSON.stringify(current) !== JSON.stringify(next)) {
         if (variable === "usersCache") usersCache = next || {};
@@ -4461,12 +4492,20 @@ async function initAppData() {
   ]);
   // A failed/empty response must not wipe the last known account list in memory.
   if (users && typeof users === "object" && !Array.isArray(users)) {
-    if (Object.keys(usersCache || {}).length > 0) {
-      try { localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users:usersCache})); } catch(e) {}
-    }
-    usersCache = users;
-    if (Object.keys(users).length > 0) {
-      try { localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users})); } catch(e) {}
+    const cachedUsers=readSharedCache(USERS_KEY);
+    // An empty cloud response must never replace a known non-empty account list.
+    if (Object.keys(users).length===0 && cachedUsers && typeof cachedUsers==="object" && Object.keys(cachedUsers).length>0) {
+      usersCache=cachedUsers;
+      cloudSet(USERS_KEY,cachedUsers,true);
+    } else {
+      if (Object.keys(usersCache || {}).length > 0) {
+        try { localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users:usersCache})); } catch(e) {}
+      }
+      usersCache = users;
+      writeSharedCache(USERS_KEY,users);
+      if (Object.keys(users).length > 0) {
+        try { localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users})); } catch(e) {}
+      }
     }
   }
   announcementsCache = announcements || [];
