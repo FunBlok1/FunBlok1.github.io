@@ -643,10 +643,10 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
       <details style="margin-top:12px">
         <summary style="cursor:pointer;font-weight:bold">One-time setup (free)</summary>
         <ol style="font-size:13px;line-height:1.7">
-          <li>Open <a href="https://supabase.com/dashboard" target="_blank" rel="noopener">Supabase Dashboard</a> and create a free project.</li>
-          <li>In Project Settings → API, copy the Project URL and the public publishable key (or legacy anon key).</li>
-          <li>Paste both above and press <b>Save connection</b>. The settings stay on this device only; enter them on each device.</li>
-          <li>Enter the same room code on both devices and press <b>Create / Join room</b>.</li>
+          <li>FunBlok's free online service is already configured on this website.</li>
+          <li>Enter a display name and the same room code on each device.</li>
+          <li>Press <b>Create / Join room</b> on each device to connect.</li>
+          <li>The project URL and publishable key are public browser settings; never add a service-role or secret key.</li>
         </ol>
         <p style="font-size:12px;color:#64748b">Never paste a service-role or secret key here. This is an open beta room: anyone who knows the room code and project settings can join. Do not use it for private data. Free service limits apply.</p>
       </details>
@@ -662,8 +662,11 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     const ctx = canvas.getContext('2d');
     const ids = {url:'fb-mp-url',key:'fb-mp-key',name:'fb-mp-name',room:'fb-mp-room'};
     const stored = key => { try{return localStorage.getItem(key)||''}catch(e){return ''} };
-    $(ids.url).value = stored('fb_mp_supabase_url');
-    $(ids.key).value = stored('fb_mp_supabase_key');
+    // FunBlok's public Supabase project settings. Publishable key is designed for browser use.
+    const DEFAULT_URL = 'https://yvycanrmtfeophiinbxq.supabase.co';
+    const DEFAULT_KEY = 'sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu';
+    $(ids.url).value = stored('fb_mp_supabase_url') || DEFAULT_URL;
+    $(ids.key).value = stored('fb_mp_supabase_key') || DEFAULT_KEY;
     $(ids.name).value = stored('fb_mp_name') || stored('fb_username') || 'Player';
     let client=null, channel=null, myId='p'+Math.random().toString(36).slice(2,10), connected=false;
     let players=new Map(), blocks=[], x=450, y=260, lastSend=0, pendingJoin=false;
@@ -4492,7 +4495,8 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 <script id="funblok-storm-script">
 (function(){
- const API=(location.protocol==='http:'||location.protocol==='https:')?(window.FUNBLOK_API_URL||'/api'):null;
+ // GitHub Pages is static and has no /api server. Only enable the legacy API if a real backend URL is explicitly configured.
+ const API=(typeof window.FUNBLOK_API_URL==='string'&&window.FUNBLOK_API_URL.trim())?window.FUNBLOK_API_URL.trim().replace(/\/+$/,''):null;
  const $=id=>document.getElementById(id);
  const esc=s=>{const d=document.createElement('div');d.textContent=s??'';return d.innerHTML};
  async function getState(key, fallback){ if(!API)return fallback; try{const r=await fetch(API+'/state/'+encodeURIComponent(key),{cache:'no-store'});if(r.ok){const d=await r.json();return d.value??fallback}}catch{} return fallback }
