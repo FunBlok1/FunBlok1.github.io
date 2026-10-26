@@ -1412,20 +1412,91 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'funblok:instant-sync') syncFromServer();
 });
 
+// Cross-platform online presence. Supabase Realtime Presence is shared across
+// browsers/devices; localStorage is deliberately NOT used as the online-player source.
+let funblokOnlinePlayers = {};
+let funblokPresenceChannel = null;
+let funblokPresenceRetry = null;
+function renderOnlinePresence() {
+  const online = Object.values(funblokOnlinePlayers || {});
+  const onlineNames = new Set(online.map(p => String(p.username || "").toLowerCase()).filter(Boolean));
+  const grid = document.getElementById("players-grid");
+  if (grid) {
+    grid.querySelectorAll("[data-fb-player-name]").forEach(card => {
+      const name = String(card.getAttribute("data-fb-player-name") || "").toLowerCase();
+      let badge = card.querySelector(".fb-online-badge");
+      if (onlineNames.has(name)) {
+        if (!badge) { badge = document.createElement("span"); badge.className = "fb-online-badge"; badge.textContent = "● ONLINE"; badge.style.cssText = "display:inline-block;color:#27c979;font-size:10px;font-weight:800;margin-top:4px"; card.appendChild(badge); }
+      } else if (badge) badge.remove();
+    });
+  }
+  const stat = document.querySelector("#nova-owner-stats");
+  if (stat) {
+    let live = stat.querySelector("[data-fb-online-count]");
+    if (live) live.textContent = String(onlineNames.size);
+  }
+  document.querySelectorAll("[data-fb-online-user]").forEach(el => {
+    el.textContent = onlineNames.has(String(el.getAttribute("data-fb-online-user") || "").toLowerCase()) ? "ONLINE" : "OFFLINE";
+  });
+}
 function startPresence() {
-  if (!hasSharedServer) return;
-  const send = () => {
-    const me = typeof getCurrentUser === "function" ? getCurrentUser() : null;
-    if (!me) return;
-    fetch(FUNBLOK_API + "/presence", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({username:me.username})
-    }).catch(()=>{});
+  const me = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  if (hasSharedServer) {
+    const send = () => {
+      const current = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      if (!current) return;
+      fetch(FUNBLOK_API + "/presence", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({username:current.username})
+      }).catch(()=>{});
+    };
+    send();
+    clearInterval(window.funblokPresenceTimer);
+    window.funblokPresenceTimer = setInterval(send, 15000);
+    return;
+  }
+  if (!FUNBLOK_DB) {
+    console.warn("FunBlok online presence unavailable: Realtime client did not load.");
+    return;
+  }
+  if (funblokPresenceChannel) { try { FUNBLOK_DB.removeChannel(funblokPresenceChannel); } catch(e) {} }
+  if (funblokPresenceRetry) clearTimeout(funblokPresenceRetry);
+  const identity = (me && me.username) || "guest";
+  funblokPresenceChannel = FUNBLOK_DB.channel("funblok-online-users", {
+    config:{presence:{key:identity.toLowerCase() + "-" + Math.random().toString(36).slice(2,8)}}
+  });
+  const readPresence = () => {
+    const state = funblokPresenceChannel.presenceState();
+    const next = {};
+    Object.values(state || {}).flat().forEach(p => {
+      if (!p || !p.username) return;
+      next[String(p.username).toLowerCase()] = {username:String(p.username), lastSeen:Date.now()};
+    });
+    funblokOnlinePlayers = next;
+    renderOnlinePresence();
   };
-  send();
-  clearInterval(window.funblokPresenceTimer);
-  window.funblokPresenceTimer = setInterval(send, 15000);
+  funblokPresenceChannel.on("presence", {event:"sync"}, readPresence);
+  funblokPresenceChannel.subscribe(async status => {
+    if (status === "SUBSCRIBED") {
+      const current = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      if (current) {
+        try { await funblokPresenceChannel.track({username:current.username, online:true, joinedAt:new Date().toISOString()}); }
+        catch(e) { console.warn("FunBlok presence tracking failed", e); }
+      }
+      readPresence();
+    } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+      funblokPresenceRetry = setTimeout(startPresence, 5000);
+    }
+  });
+  document.addEventListener("visibilitychange", async () => {
+    if (!document.hidden && funblokPresenceChannel) {
+      const current = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      if (current) try { await funblokPresenceChannel.track({username:current.username, online:true, joinedAt:new Date().toISOString()}); } catch(e) {}
+    }
+  });
+  window.addEventListener("beforeunload", () => {
+    if (funblokPresenceChannel && FUNBLOK_DB) FUNBLOK_DB.removeChannel(funblokPresenceChannel);
+  });
 }
 
 /* =========================================================
@@ -2166,7 +2237,7 @@ function renderPlayers() {
     return (rank[a.role] ?? 2) - (rank[b.role] ?? 2);
   });
   grid.innerHTML = sorted.map(u => `
-    <div class="swatch-card ${u.role !== 'user' ? 'staff-card' : ''}" onclick="showProfile('${escapeHtml(u.username)}')">
+    <div class="swatch-card ${u.role !== 'user' ? 'staff-card' : ''}" data-fb-player-name="${escapeHtml(u.username)}" onclick="showProfile('${escapeHtml(u.username)}')">
       <div class="swatch-avatar" style="background:${u.avatarColor || '#00559e'};"></div>
       <div class="swatch-name">${escapeHtml(u.displayName || u.username)}</div>
       <div style="margin-top:4px;">${roleBadgeHtml(u.role)} ${membershipBadgeHtml(effectiveMembership(u))}</div>
@@ -4594,7 +4665,7 @@ async function initAppData() {
     const counts={user:0,admin:0,coowner:0,owner:0};
     users.forEach(u=>counts[u.role]=(counts[u.role]||0)+1);
     el.innerHTML=[
-      ["Players",users.length],["Users",counts.user],["Admins",counts.admin],
+      ["Players",users.length],["Online",'<span data-fb-online-count>'+new Set(Object.values(funblokOnlinePlayers||{}).map(p=>String(p.username||"").toLowerCase())).size+'</span>'],["Users",counts.user],["Admins",counts.admin],
       ["Co-Owners",counts.coowner],["FCoins",users.reduce((n,u)=>n+(Number(u.coins)||0),0)],
       ["Marketplace",typeof marketplaceCache!=="undefined"?marketplaceCache.length:0]
     ].map(x=>`<div class="nova-stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join("");
