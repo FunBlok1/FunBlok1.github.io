@@ -4872,5 +4872,120 @@ table{max-width:100%;border-collapse:collapse}
   }
 })();
 </script>
+
+<style id="funblok-touch-controller-css">
+#funblok-touch-controller{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:99990;display:none;align-items:flex-end;justify-content:space-between;gap:16px;pointer-events:none;user-select:none;-webkit-user-select:none}
+#funblok-touch-controller .ftc-pad,#funblok-touch-controller .ftc-actions{display:grid;gap:7px;pointer-events:auto}
+#funblok-touch-controller .ftc-pad{grid-template-columns:repeat(3,clamp(43px,12vw,60px));grid-template-rows:repeat(2,clamp(43px,12vw,60px))}
+#funblok-touch-controller .ftc-actions{grid-template-columns:repeat(2,clamp(48px,13vw,66px));align-items:end}
+#funblok-touch-controller button{border:2px solid #ffffffaa;border-radius:15px;background:#12253be8;color:#fff;box-shadow:0 3px 0 #0005;font:700 20px Arial,sans-serif;touch-action:none;min-width:0;min-height:44px;cursor:pointer;backdrop-filter:blur(5px)}
+#funblok-touch-controller button:active,#funblok-touch-controller button.ftc-pressed{background:#087ca4;transform:translateY(2px);box-shadow:0 1px 0 #0005}
+#funblok-touch-controller .ftc-up{grid-column:2}.ftc-left{grid-column:1;grid-row:2}.ftc-down{grid-column:2;grid-row:2}.ftc-right{grid-column:3;grid-row:2}
+#funblok-touch-controller .ftc-action{font-size:12px;min-height:58px;padding:5px}
+#funblok-touch-controller .ftc-action strong{display:block;font-size:20px}
+#funblok-touch-controller .ftc-hint{position:absolute;left:50%;bottom:5px;transform:translateX(-50%);font:11px Arial,sans-serif;color:#fff;background:#12253bbd;padding:5px 8px;border-radius:8px;white-space:nowrap}
+@media(min-width:900px){#funblok-touch-controller{left:20px;right:20px;bottom:16px;opacity:.82}}
+@media(prefers-reduced-motion:reduce){#funblok-touch-controller button{transform:none!important}}
+</style>
+<div id="funblok-touch-controller" aria-label="Touch and controller controls">
+  <div class="ftc-pad" aria-label="Direction controls">
+    <button type="button" class="ftc-up" data-ftc-key="ArrowUp" aria-label="Move up">▲</button>
+    <button type="button" class="ftc-left" data-ftc-key="ArrowLeft" aria-label="Move left">◀</button>
+    <button type="button" class="ftc-down" data-ftc-key="ArrowDown" aria-label="Move down">▼</button>
+    <button type="button" class="ftc-right" data-ftc-key="ArrowRight" aria-label="Move right">▶</button>
+  </div>
+  <div class="ftc-actions">
+    <button type="button" class="ftc-action" data-ftc-key="Shift" aria-label="Run"><strong>⚡</strong>RUN</button>
+    <button type="button" class="ftc-action" data-ftc-key=" " aria-label="Jump or action"><strong>●</strong>JUMP / ACT</button>
+  </div>
+  <div class="ftc-hint">Touch controls · Connect a gamepad for controller support</div>
+</div>
+<script id="funblok-touch-controller-js">
+(()=> {
+  if(window.__funblokTouchControllerInstalled)return;
+  window.__funblokTouchControllerInstalled=true;
+  const ui=document.getElementById('funblok-touch-controller');
+  if(!ui)return;
+  const activeKeys=new Set();
+  let raf=0,lastPadKeys=new Set(),lastActionAt=0;
+  const keyCode=k=>k===' '?'Space':k==='Shift'?'ShiftLeft':k;
+  function keyEvent(type,key){
+    const code=keyCode(key);
+    document.dispatchEvent(new KeyboardEvent(type,{key:key===' '?' ':key,code,bubbles:true,cancelable:true}));
+  }
+  function down(key,button){
+    if(!activeKeys.has(key)){activeKeys.add(key);keyEvent('keydown',key)}
+    if(button)button.classList.add('ftc-pressed');
+  }
+  function up(key,button){
+    if(activeKeys.has(key)){activeKeys.delete(key);keyEvent('keyup',key)}
+    if(button)button.classList.remove('ftc-pressed');
+  }
+  ui.querySelectorAll('[data-ftc-key]').forEach(button=>{
+    const key=button.dataset.ftcKey;
+    button.addEventListener('pointerdown',e=>{e.preventDefault();try{button.setPointerCapture(e.pointerId)}catch(_){}down(key,button)});
+    const release=e=>{if(e)e.preventDefault();up(key,button)};
+    button.addEventListener('pointerup',release);
+    button.addEventListener('pointercancel',release);
+    button.addEventListener('lostpointercapture',release);
+    button.addEventListener('contextmenu',e=>e.preventDefault());
+  });
+  function isPlayablePage(){
+    const games=document.getElementById('page-games'),studio=document.getElementById('page-studio');
+    const stage=document.getElementById('game-stage-panel');
+    const gameOpen=!!(games&&games.classList.contains('active')&&stage&&stage.style.display!=='none');
+    const studioOpen=!!(studio&&studio.classList.contains('active'));
+    return gameOpen||studioOpen;
+  }
+  function updateVisibility(){
+    const visible=isPlayablePage();
+    ui.style.display=visible?'flex':'none';
+    if(!visible){for(const k of [...activeKeys])up(k);lastPadKeys.clear()}
+  }
+  function poll(){
+    updateVisibility();
+    if(isPlayablePage()&&navigator.getGamepads){
+      const pads=navigator.getGamepads();
+      const keys=new Set();
+      for(const pad of pads){
+        if(!pad||!pad.connected)continue;
+        const x=pad.axes[0]||0,y=pad.axes[1]||0;
+        if(x<-.35)keys.add('ArrowLeft');if(x>.35)keys.add('ArrowRight');
+        if(y<-.35)keys.add('ArrowUp');if(y>.35)keys.add('ArrowDown');
+        if(pad.buttons[12]?.pressed)keys.add('ArrowUp');
+        if(pad.buttons[13]?.pressed)keys.add('ArrowDown');
+        if(pad.buttons[14]?.pressed)keys.add('ArrowLeft');
+        if(pad.buttons[15]?.pressed)keys.add('ArrowRight');
+        if(pad.buttons[0]?.pressed||pad.buttons[1]?.pressed)keys.add(' ');
+        if(pad.buttons[4]?.pressed||pad.buttons[5]?.pressed)keys.add('Shift');
+      }
+      for(const k of lastPadKeys)if(!keys.has(k))up(k);
+      for(const k of keys)if(!lastPadKeys.has(k))down(k);
+      lastPadKeys=keys;
+    }else{
+      for(const k of lastPadKeys)up(k);
+      lastPadKeys.clear();
+    }
+    raf=requestAnimationFrame(poll);
+  }
+  window.addEventListener('gamepadconnected',()=>{const hint=ui.querySelector('.ftc-hint');if(hint)hint.textContent='Controller connected · D-pad / stick to move · A / B to act'});
+  window.addEventListener('gamepaddisconnected',()=>{const hint=ui.querySelector('.ftc-hint');if(hint)hint.textContent='Touch controls · Connect a gamepad for controller support'});
+  window.addEventListener('blur',()=>{for(const k of [...activeKeys])up(k)});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)for(const k of [...activeKeys])up(k)});
+  // Re-evaluate visibility after navigation without depending on the order of existing scripts.
+  const originalShowPage=window.showPage;
+  if(typeof originalShowPage==='function'&&!originalShowPage.__ftcWrapped){
+    const wrapped=function(){const result=originalShowPage.apply(this,arguments);updateVisibility();return result};
+    wrapped.__ftcWrapped=true;window.showPage=wrapped;
+  }
+  const originalShowGame=window.showGame;
+  if(typeof originalShowGame==='function'&&!originalShowGame.__ftcWrapped){
+    const wrapped=function(){const result=originalShowGame.apply(this,arguments);updateVisibility();return result};
+    wrapped.__ftcWrapped=true;window.showGame=wrapped;
+  }
+  window.addEventListener('load',updateVisibility);
+  poll();
+})();
+</script>
 </body>
 </html>
