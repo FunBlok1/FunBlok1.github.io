@@ -735,6 +735,18 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     <div class="panel-title">Studio &mdash; Build Mode</div>
     <div class="panel-body">
 
+      
+      <div id="fb-studio-pro-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px;padding:12px;border:1px solid #b8dce7;border-radius:10px;background:linear-gradient(135deg,#f3fbff,#e9f4fb)">
+        <div style="flex:1;min-width:170px"><b style="display:block;font-size:13px">STUDIO TOOLKIT</b><span style="font-size:11px;color:#587080">Quick tools · camera · grid · building helpers</span></div>
+        <button type="button" class="btn btn-small" id="fb-studio-camera">🎥 Reset camera</button>
+        <button type="button" class="btn btn-outline btn-small" id="fb-studio-grid">▦ Hide grid</button>
+        <button type="button" class="btn btn-outline btn-small" id="fb-studio-snap">🧲 Snap: ON</button>
+        <button type="button" class="btn btn-small" id="fb-studio-duplicate">▣ Duplicate selected</button>
+        <button type="button" class="btn btn-small" id="fb-studio-focus">◎ Focus selected</button>
+        <button type="button" class="btn btn-outline btn-small" id="fb-studio-ground">⬇ Drop to ground</button>
+        <div id="fb-studio-tool-status" role="status" style="flex-basis:100%;font-size:11px;color:#526777">Tip: select a part to edit it. Right-click a part to delete it. Use mouse wheel to zoom.</div>
+      </div>
+
       <div id="studio-toolbox" style="display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; margin-bottom:10px; padding:10px; background:#f5f5f5; border-radius:6px;">
         <div>
           <div style="font-size:11px; font-weight:bold; margin-bottom:4px; color:#555;">INSERT SHAPE</div>
@@ -1075,8 +1087,12 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
    the same server-side JSON database. localStorage remains only
    as a fallback for opening the HTML file directly.
    ========================================================= */
+// GitHub Pages is static and does not provide a /api server by default.
+// Only enable the legacy shared-server sync if a real API URL is explicitly configured.
 const FUNBLOK_API = (location.protocol === "http:" || location.protocol === "https:")
-  ? (window.FUNBLOK_API_URL || "/api") : null;
+  ? (typeof window.FUNBLOK_API_URL === "string" && window.FUNBLOK_API_URL.trim()
+      ? window.FUNBLOK_API_URL.trim().replace(/\\/+$/, "") : null)
+  : null;
 const hasSharedServer = !!FUNBLOK_API;
 let serverSyncTimer = null;
 let serverEventSource = null;
@@ -1182,7 +1198,7 @@ async function syncFromServer() {
 
 function startServerSync() {
   if (!hasSharedServer) {
-    setServerStatus(false, "LOCAL MODE");
+    setServerStatus(false, "LOCAL MODE • Online rooms are in Studio");
     return;
   }
   if (serverEventSource) try { serverEventSource.close(); } catch(e){}
@@ -3734,7 +3750,24 @@ function initStudioOnce() {
   ground.rotation.x = -Math.PI / 2;
   ground.name = "ground";
   scene.add(ground);
-  scene.add(new THREE.GridHelper(GRID_SIZE, GRID_SIZE));
+  const studioGrid = new THREE.GridHelper(GRID_SIZE, GRID_SIZE);
+  scene.add(studioGrid);
+  let studioGridVisible = true;
+  let studioSnapEnabled = true;
+  let studioToolStatus = document.getElementById("fb-studio-tool-status");
+  function studioToolMessage(msg) { if (studioToolStatus) studioToolStatus.textContent = msg; }
+  window.__fbStudioResetCamera = () => { camera.position.set(8, 8, 8); controls.target.set(0, 0, 0); controls.update(); studioToolMessage("Camera reset to the full build area."); };
+  window.__fbStudioToggleGrid = () => { studioGridVisible = !studioGridVisible; studioGrid.visible = studioGridVisible; const b=document.getElementById("fb-studio-grid"); if(b)b.textContent=studioGridVisible?"▦ Hide grid":"▦ Show grid"; studioToolMessage(studioGridVisible?"Build grid is visible.":"Build grid is hidden."); };
+  window.__fbStudioToggleSnap = () => { studioSnapEnabled = !studioSnapEnabled; const b=document.getElementById("fb-studio-snap"); if(b)b.textContent=studioSnapEnabled?"🧲 Snap: ON":"🧲 Snap: OFF"; studioToolMessage(studioSnapEnabled?"Grid snapping enabled.":"Grid snapping disabled."); };
+  window.__fbStudioFocusSelected = () => { if(!selectedPart){studioToolMessage("Select a part first, then use Focus selected.");return;} controls.target.copy(selectedPart.position); camera.position.set(selectedPart.position.x+7,selectedPart.position.y+6,selectedPart.position.z+7); controls.update(); studioToolMessage("Camera focused on selected part."); };
+  window.__fbStudioDuplicateSelected = () => { if(!selectedPart){studioToolMessage("Select a part first, then duplicate it.");return;} document.getElementById("prop-duplicate-btn").click(); studioToolMessage("Part duplicated."); };
+  window.__fbStudioGroundSelected = () => { if(!selectedPart){studioToolMessage("Select a part first, then drop it to the ground.");return;} selectedPart.position.y = Math.max(selectedPart.scale.y/2,0.5); selectPart(selectedPart); persistWorld(); studioToolMessage("Selected part moved down to the ground."); };
+  document.getElementById("fb-studio-camera")?.addEventListener("click",()=>window.__fbStudioResetCamera());
+  document.getElementById("fb-studio-grid")?.addEventListener("click",()=>window.__fbStudioToggleGrid());
+  document.getElementById("fb-studio-snap")?.addEventListener("click",()=>window.__fbStudioToggleSnap());
+  document.getElementById("fb-studio-duplicate")?.addEventListener("click",()=>window.__fbStudioDuplicateSelected());
+  document.getElementById("fb-studio-focus")?.addEventListener("click",()=>window.__fbStudioFocusSelected());
+  document.getElementById("fb-studio-ground")?.addEventListener("click",()=>window.__fbStudioGroundSelected());
 
   // Shared unit-size geometries — each part is sized via mesh.scale instead of rebuilding geometry
   const SHAPE_GEO = {
@@ -3941,9 +3974,9 @@ function initStudioOnce() {
         const hit = hits[0];
         const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
         const pos = hit.point.clone().add(normal.multiplyScalar(0.5));
-        const x = snapToGrid(pos.x);
-        const y = Math.floor(pos.y) + 0.5;
-        const z = snapToGrid(pos.z);
+        const x = studioSnapEnabled ? snapToGrid(pos.x) : pos.x;
+        const y = studioSnapEnabled ? Math.floor(pos.y) + 0.5 : pos.y;
+        const z = studioSnapEnabled ? snapToGrid(pos.z) : pos.z;
         createPart(currentShape, x, y, z, 1, 1, 1, 0, currentColor);
         persistWorld();
       }
