@@ -679,6 +679,8 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     const status=t=>{$('fb-mp-status').textContent=t};
     const clean=t=>String(t||'').replace(/[<>]/g,'').trim().slice(0,24);
     function draw(){
+      const now=Date.now();
+      for(const [id,p] of players){if(id!==myId&&p.lastSeen&&now-p.lastSeen>12000)players.delete(id)}
       const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#101b2b';ctx.fillRect(0,0,w,h);
       ctx.strokeStyle='rgba(100,180,220,.13)';ctx.lineWidth=1;
       for(let gx=0;gx<w;gx+=40){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,h);ctx.stroke()}
@@ -707,21 +709,20 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
       try{
         if(channel){await client.removeChannel(channel);channel=null}connected=false;players.clear();blocks=[];save();
         client=window.supabase.createClient(url,key,{realtime:{params:{eventsPerSecond:20}}});
-        channel=client.channel('funblok-room-'+room,{config:{presence:{key:myId},broadcast:{self:false}}});
-        channel.on('presence',{event:'sync'},()=>{
-          const state=channel.presenceState();players.clear();
-          Object.values(state).flat().forEach(p=>{if(p.id!==myId)players.set(p.id,p)});
-          if(connected)status('Connected to room '+room+'. Share this code with friends: '+room);
+        // Broadcast-only presence avoids repeated presence tracking hitting Supabase rate limits.
+        channel=client.channel('funblok-room-'+room,{config:{broadcast:{self:false}}});
+        channel.on('broadcast',{event:'position'},({payload})=>{
+          if(payload&&payload.id!==myId)players.set(payload.id,{...payload,lastSeen:Date.now()});
         });
-        channel.on('broadcast',{event:'position'},({payload})=>{if(payload&&payload.id!==myId)players.set(payload.id,payload)});
         channel.on('broadcast',{event:'block'},({payload})=>{if(payload&&payload.id&&!blocks.some(b=>b.id===payload.id))blocks.push(payload)});
         channel.on('broadcast',{event:'world-sync-request'},()=>broadcast('world-sync',{blocks}));
         channel.on('broadcast',{event:'world-sync'},({payload})=>{if(payload&&Array.isArray(payload.blocks)){const known=new Set(blocks.map(b=>b.id));payload.blocks.forEach(b=>{if(b&&b.id&&!known.has(b.id)){blocks.push(b);known.add(b.id)}})}});
         channel.subscribe(async statusText=>{
           if(statusText==='SUBSCRIBED'){
-            connected=true;await channel.track(state());sendPos(true);broadcast('world-sync-request',{from:myId});
+            connected=true;sendPos(true);broadcast('world-sync-request',{from:myId});
             status('Connected to room '+room+'. Share this room code with friends: '+room);
           } else if(statusText==='CHANNEL_ERROR'||statusText==='TIMED_OUT'||statusText==='CLOSED'){
+            if(statusText==='CLOSED'&&!connected)return;
             connected=false;status('Realtime connection failed ('+statusText+'). Check internet and project status, then refresh and retry.');
           }
         });
