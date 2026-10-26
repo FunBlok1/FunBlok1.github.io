@@ -4996,7 +4996,7 @@ body.ftv-mode button,body.ftv-mode a,body.ftv-mode input,body.ftv-mode select,bo
 body.ftv-mode button,body.ftv-mode a,body.ftv-mode input,body.ftv-mode select{min-height:44px}
 body.ftv-mode :focus-visible{outline:4px solid var(--ftv-focus)!important;outline-offset:4px!important;box-shadow:0 0 0 3px #00182b!important}
 body.ftv-mode .gamecard:focus,body.ftv-mode .gamecard:focus-visible{transform:scale(1.025);border-color:var(--ftv-focus);box-shadow:0 0 0 4px var(--ftv-focus)}
-#funblok-tv-toolbar{position:fixed;top:12px;right:12px;z-index:100002;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 24px);font:14px/1.35 Arial,sans-serif}
+#funblok-tv-toolbar{position:fixed;top:auto;right:14px;bottom:76px;z-index:99960;display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:min(360px,calc(100vw - 24px));font:13px/1.3 Arial,sans-serif;pointer-events:none}#funblok-tv-toolbar button{pointer-events:auto}#funblok-tv-status{display:none}body.ftv-mode #funblok-tv-toolbar{bottom:76px}@media(max-width:600px){#funblok-tv-toolbar{right:10px;bottom:66px;max-width:calc(100vw - 20px)}#funblok-tv-toolbar button{padding:7px 9px;min-height:38px;font-size:12px}}
 #funblok-tv-toolbar button{border:2px solid #9adfff;border-radius:12px;background:#10273c;color:white;padding:10px 13px;min-height:44px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px #0004}
 #funblok-tv-toolbar button:focus-visible{outline:4px solid #29b8ff;outline-offset:3px}
 #funblok-tv-status{background:#10273c;color:#fff;border-radius:10px;padding:8px 11px;max-width:260px}
@@ -5006,10 +5006,10 @@ body.ftv-mode #funblok-touch-controller{bottom:18px;opacity:.96}
 @media(min-width:900px){body.ftv-mode .page{max-width:1500px;margin-left:auto;margin-right:auto}body.ftv-mode #gamegrid,body.ftv-mode #gamegrid2{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}}
 @media(prefers-reduced-motion:reduce){body.ftv-mode *{scroll-behavior:auto!important}}
 </style>
-<div id="funblok-tv-toolbar" aria-label="TV mode controls">
-  <button id="funblok-tv-toggle" type="button" aria-pressed="false">📺 TV mode</button>
-  <button id="funblok-tv-voice" type="button">🎙 Voice commands</button>
-  <span id="funblok-tv-status" role="status" aria-live="polite">TV controls ready · Press Tab to navigate</span>
+<div id="funblok-tv-toolbar" aria-label="Accessibility and TV controls">
+  <button id="funblok-tv-toggle" type="button" aria-pressed="false" title="Toggle TV navigation mode">📺 TV</button>
+  <button id="funblok-tv-voice" type="button" title="Open voice commands">🎙 Voice</button>
+  <span id="funblok-tv-status" role="status" aria-live="polite">TV controls ready</span>
 </div>
 <div id="funblok-tv-voice-panel" role="dialog" aria-modal="false" aria-labelledby="funblok-tv-voice-title">
   <h2 id="funblok-tv-voice-title" style="margin-top:0">FunBlok voice controls</h2>
@@ -5194,6 +5194,13 @@ body.ftv-mode #funblok-touch-controller{bottom:18px;opacity:.96}
 #funblok-daily-card{margin:14px 0;padding:14px;border:1px solid #80b9df;border-radius:14px;background:linear-gradient(120deg,rgba(36,149,210,.13),rgba(140,98,220,.12))}
 #funblok-daily-card button{min-height:40px}
 @media(max-width:600px){#funblok-command-open{right:10px;bottom:10px;padding:10px 12px}#funblok-command-card{padding:12px}}
+</style>
+<style id="funblok-platform-polish">
+/* Compact utility controls stay out of the header and away from the main content. */
+#funblok-tv-toolbar{opacity:.72;transition:opacity .18s ease}#funblok-tv-toolbar:hover,#funblok-tv-toolbar:focus-within{opacity:1}
+#funblok-tv-toolbar button{border-radius:999px!important;padding:8px 12px!important;background:#102d47!important;border:1px solid #70caff!important;font-size:12px!important}
+#funblok-command-open{bottom:14px;right:14px}
+@media(max-width:600px){#funblok-command-open{bottom:10px;right:10px}#funblok-tv-toolbar{bottom:61px}}
 </style>
 <button id="funblok-command-open" type="button" aria-haspopup="dialog" aria-controls="funblok-command-center">⌕ Quick launch <span style="opacity:.7;font-size:11px">Ctrl K</span></button>
 <div id="funblok-command-center" role="dialog" aria-modal="true" aria-label="FunBlok quick launch">
