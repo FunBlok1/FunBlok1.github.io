@@ -549,8 +549,17 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
 <!-- HOME -->
 <div class="page active" id="page-home">
   <div id="hero" style="margin: -1px -16px 18px;">
-    <h1>Build. Play. Imagine.</h1>
-    <p>Your own site, your own rules &mdash; starting with you.</p>
+    <div class="fb-hero-inner">
+      <span class="fb-hero-kicker">THE BLOCK-BUILDING UNIVERSE</span>
+      <h1>Build. Play. Imagine.</h1>
+      <p>Create worlds, play mini-games, customize your avatar and meet the FunBlok community.</p>
+      <div class="fb-hero-actions">
+        <button type="button" class="btn fb-hero-primary" id="fb-hero-play">▶ Play games</button>
+        <button type="button" class="btn btn-outline fb-hero-secondary" id="fb-hero-create">▦ Open Studio</button>
+        <button type="button" class="btn btn-outline fb-hero-secondary" id="fb-hero-join">＋ Join FunBlok</button>
+      </div>
+      <div class="fb-hero-note"><span class="fb-live-dot"></span> Free to explore · Built for players and creators</div>
+    </div>
   </div>
   <div class="panel">
     <div class="panel-title">Featured Games</div>
@@ -5241,6 +5250,49 @@ body.ftv-mode #funblok-touch-controller{bottom:18px;opacity:.96}
  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();open()}if(e.key==='Escape'&&overlay.style.display==='flex')close()});
  draw();
 })();
+</script>
+<style id="funblok-ultimate-polish">
+/* FunBlok home refresh: keep the classic game feel while improving clarity and touch use. */
+#hero{position:relative;overflow:hidden;background:radial-gradient(ellipse at 82% 12%,rgba(83,185,255,.28),transparent 35%),linear-gradient(125deg,#07172a 0%,#0d3760 52%,#00559e 100%);color:#fff;padding:clamp(28px,5vw,58px) clamp(18px,4vw,42px);border-bottom:4px solid #ff8c1a;isolation:isolate}
+#hero:after{content:"";position:absolute;right:-45px;bottom:-95px;width:260px;height:260px;border:30px solid rgba(255,255,255,.07);transform:rotate(24deg);border-radius:28px;z-index:-1}
+.fb-hero-inner{max-width:860px;margin:0 auto}
+.fb-hero-kicker{display:inline-block;font-size:11px;font-weight:900;letter-spacing:2px;color:#9ddcff;margin-bottom:10px}
+#hero h1{font-size:clamp(32px,5vw,54px);line-height:1.03;letter-spacing:-1.5px;margin:0 0 14px;text-wrap:balance}
+#hero p{font-size:clamp(14px,2vw,17px);line-height:1.6;max-width:560px;color:#e0f1ff;margin:0 0 22px}
+.fb-hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+.fb-hero-actions .btn{min-height:42px;padding:10px 17px;border-radius:9px;font-size:13px}
+.fb-hero-primary{background:#ff8c1a;border-color:#ffb45f;color:#171717;box-shadow:0 5px 0 #a64c00}
+.fb-hero-primary:hover{background:#ffad4c;transform:translateY(-1px)}
+.fb-hero-secondary{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.55);color:white}
+.fb-hero-secondary:hover{background:rgba(255,255,255,.18);color:white}
+.fb-hero-note{display:flex;align-items:center;gap:8px;margin-top:22px;color:#c8e6fa;font-size:11px;font-weight:700}
+.fb-live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#52e0a0;box-shadow:0 0 0 4px rgba(82,224,160,.15)}
+#page-home .panel,#page-games .panel,#page-studio .panel{box-shadow:0 4px 16px rgba(10,35,60,.055);overflow:hidden}
+#page-home .panel-title{padding:11px 14px}
+#page-home .panel-body{padding:14px}
+#navlinks a,#future-tools button,.btn{transition:background .16s ease,color .16s ease,border-color .16s ease,transform .16s ease}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #ff9d2e!important;outline-offset:3px}
+#authbox .btn{white-space:nowrap}
+@media(max-width:900px){
+ #header{flex-wrap:wrap;gap:10px;padding:10px 12px}
+ #navlinks{order:3;width:100%;overflow-x:auto;gap:15px;padding:5px 0 8px;white-space:nowrap;scrollbar-width:thin}
+ #authbox{margin-left:auto}
+ #future-tools{overflow-x:auto;white-space:nowrap}
+}
+@media(max-width:600px){
+ #hero{margin-left:-10px!important;margin-right:-10px!important;padding:30px 18px}
+ #hero h1{letter-spacing:-.8px}
+ .fb-hero-actions{display:grid;grid-template-columns:1fr 1fr}
+ .fb-hero-actions button:first-child{grid-column:1/-1}
+ .fb-hero-actions .btn{width:100%;min-height:44px}
+ #authbox{gap:5px;flex-wrap:wrap;justify-content:flex-end}
+ #authbox .btn{padding:7px 10px;font-size:11px}
+ #navlinks{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){#hero *,.fb-hero-actions .btn{transition:none!important;animation:none!important}}
+</style>
+<script id="funblok-hero-actions-js">
+(()=>{const play=document.getElementById('fb-hero-play'),create=document.getElementById('fb-hero-create'),join=document.getElementById('fb-hero-join');if(play)play.addEventListener('click',()=>showPage('games'));if(create)create.addEventListener('click',()=>showPage('studio'));if(join)join.addEventListener('click',()=>{if(typeof getCurrentUser==='function'&&getCurrentUser()){showPage('account')}else{showPage('account');document.getElementById('signup-username')?.focus()}})})();
 </script>
 </body>
 </html>
