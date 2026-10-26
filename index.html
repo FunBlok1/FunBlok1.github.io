@@ -1234,9 +1234,69 @@ async function syncFromServer() {
   }
 }
 
+async function refreshSupabaseSharedState() {
+  if (!FUNBLOK_DB || hasSharedServer || document.hidden) return;
+  try {
+    const keys = [
+      ["cb_users","usersCache",{}],
+      ["cb_announcements","announcementsCache",[]],
+      ["cb_forum_posts","forumPostsCache",[]],
+      ["cb_studio_world","studioWorldCache",[]],
+      ["cb_events","eventsCache",[]],
+      ["cb_groups","groupsCache",[]],
+      ["cb_action_log","logCache",[]],
+      ["cb_marketplace","marketplaceCache",[]]
+    ];
+    let changed = false;
+    for (const [key, variable, fallback] of keys) {
+      const {data,error} = await FUNBLOK_DB.from("funblok_shared_state").select("value").eq("key",key).maybeSingle();
+      if (error) throw error;
+      const next = data ? data.value : fallback;
+      const current = window[variable];
+      if (JSON.stringify(current) !== JSON.stringify(next)) {
+        if (variable === "usersCache") usersCache = next || {};
+        else if (variable === "announcementsCache") announcementsCache = next || [];
+        else if (variable === "forumPostsCache") forumPostsCache = next || [];
+        else if (variable === "studioWorldCache") studioWorldCache = next || [];
+        else if (variable === "eventsCache") eventsCache = next || [];
+        else if (variable === "groupsCache") groupsCache = next || [];
+        else if (variable === "logCache") logCache = next || [];
+        else if (variable === "marketplaceCache") marketplaceCache = next || [];
+        changed = true;
+      }
+    }
+    setServerStatus(true, "FUNBLOK ONLINE SYNC");
+    if (changed && typeof renderAll === "function") renderAll();
+  } catch (e) {
+    console.warn("FunBlok cloud refresh failed", e);
+    setServerStatus(false, "CLOUD SYNC RETRYING");
+  }
+}
+
+function startSupabaseStateSync() {
+  if (!FUNBLOK_DB) {
+    setServerStatus(false, "CLOUD CONNECTION UNAVAILABLE");
+    return;
+  }
+  if (funblokStateChannel) FUNBLOK_DB.removeChannel(funblokStateChannel);
+  funblokStateChannel = FUNBLOK_DB.channel("funblok-shared-state-live")
+    .on("postgres_changes", {event:"*",schema:"public",table:"funblok_shared_state"}, () => {
+      refreshSupabaseSharedState();
+    })
+    .subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        setServerStatus(true, "FUNBLOK ONLINE SYNC");
+        refreshSupabaseSharedState();
+      }
+    });
+  if (funblokStatePoll) clearInterval(funblokStatePoll);
+  funblokStatePoll = setInterval(refreshSupabaseSharedState, 5000);
+  refreshSupabaseSharedState();
+}
+
 function startServerSync() {
   if (!hasSharedServer) {
-    setServerStatus(false, "LOCAL MODE • Online rooms are in Studio");
+    startSupabaseStateSync();
     return;
   }
   if (serverEventSource) try { serverEventSource.close(); } catch(e){}
