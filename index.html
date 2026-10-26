@@ -593,6 +593,144 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
 
 <!-- STUDIO -->
 <div class="page" id="page-studio">
+
+  <style>
+    #fb-online-multiplayer{border:2px solid #26a7c7;margin-bottom:18px}
+    #fb-online-multiplayer .fb-mp-grid{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:14px}
+    #fb-mp-canvas{display:block;width:100%;height:360px;background:#101b2b;border-radius:10px;touch-action:none}
+    #fb-online-multiplayer input{max-width:100%;box-sizing:border-box;padding:9px;border:1px solid #b8c5d3;border-radius:7px}
+    #fb-online-multiplayer .fb-mp-btn{padding:9px 12px;border:0;border-radius:7px;background:#087ca4;color:white;font-weight:bold;cursor:pointer}
+    #fb-online-multiplayer .fb-mp-btn.secondary{background:#e8f1f5;color:#17455a}
+    #fb-mp-status{font-size:13px;padding:8px 10px;border-radius:7px;background:#eef4f7;margin:8px 0}
+    @media(max-width:760px){#fb-online-multiplayer .fb-mp-grid{grid-template-columns:1fr}#fb-mp-canvas{height:300px}}
+    body.future-theme #fb-mp-status{background:#101f32;color:#d9f8ff}
+  </style>
+  <div class="panel" id="fb-online-multiplayer">
+    <div class="panel-title">🌐 Online Multiplayer Studio <span style="font-size:11px;margin-left:6px">BETA</span></div>
+    <div class="panel-body">
+      <p style="margin-top:0">Create a room and share its code. Players in the same room can see each other moving and place shared blocks. This works across devices when connected to your online Realtime service.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:10px">
+        <label style="font-size:12px;font-weight:bold">Online service URL<input id="fb-mp-url" type="url" placeholder="https://your-project.supabase.co" style="display:block;width:100%;margin-top:5px"></label>
+        <label style="font-size:12px;font-weight:bold">Public publishable / anon key<input id="fb-mp-key" type="password" autocomplete="off" placeholder="Paste public key" style="display:block;width:100%;margin-top:5px"></label>
+        <label style="font-size:12px;font-weight:bold">Your display name<input id="fb-mp-name" maxlength="20" placeholder="Player" style="display:block;width:100%;margin-top:5px"></label>
+        <label style="font-size:12px;font-weight:bold">Room code<input id="fb-mp-room" maxlength="24" value="FUNBLOK" placeholder="e.g. MYWORLD" style="display:block;width:100%;margin-top:5px;text-transform:uppercase"></label>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="fb-mp-btn secondary" id="fb-mp-save" type="button">Save connection</button>
+        <button class="fb-mp-btn" id="fb-mp-join" type="button">Create / Join room</button>
+        <button class="fb-mp-btn secondary" id="fb-mp-leave" type="button">Leave room</button>
+        <button class="fb-mp-btn secondary" id="fb-mp-add-block" type="button">Place shared block</button>
+      </div>
+      <div id="fb-mp-status" role="status" aria-live="polite">Not connected yet. Set up the free online service once, then use the same room code on each device.</div>
+      <div class="fb-mp-grid">
+        <div>
+          <canvas id="fb-mp-canvas" width="900" height="520" aria-label="Multiplayer world. Use WASD or arrow keys to move."></canvas>
+          <p style="font-size:12px;color:#64748b;margin-bottom:0">Move with WASD or arrow keys. Click/tap the world or use “Place shared block”. On mobile, use the direction pad.</p>
+          <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px">
+            <button class="fb-mp-btn secondary" data-mp-move="up" type="button">▲</button>
+            <button class="fb-mp-btn secondary" data-mp-move="left" type="button">◀</button>
+            <button class="fb-mp-btn secondary" data-mp-move="down" type="button">▼</button>
+            <button class="fb-mp-btn secondary" data-mp-move="right" type="button">▶</button>
+          </div>
+        </div>
+        <aside style="background:#f4f7fa;border-radius:9px;padding:12px;color:#203040">
+          <b>Players in room</b><div id="fb-mp-count" style="font-size:26px;font-weight:bold;margin:5px 0">0</div>
+          <div id="fb-mp-players" style="font-size:13px;line-height:1.8">No room joined</div>
+          <hr style="border:0;border-top:1px solid #d5e0e8;margin:12px 0">
+          <b>Shared world blocks</b><div id="fb-mp-block-count" style="font-size:13px;margin-top:6px">0 blocks</div>
+        </aside>
+      </div>
+      <details style="margin-top:12px">
+        <summary style="cursor:pointer;font-weight:bold">One-time setup (free)</summary>
+        <ol style="font-size:13px;line-height:1.7">
+          <li>Open <a href="https://supabase.com/dashboard" target="_blank" rel="noopener">Supabase Dashboard</a> and create a free project.</li>
+          <li>In Project Settings → API, copy the Project URL and the public publishable key (or legacy anon key).</li>
+          <li>Paste both above and press <b>Save connection</b>. The settings stay on this device only; enter them on each device.</li>
+          <li>Enter the same room code on both devices and press <b>Create / Join room</b>.</li>
+        </ol>
+        <p style="font-size:12px;color:#64748b">Never paste a service-role or secret key here. This is an open beta room: anyone who knows the room code and project settings can join. Do not use it for private data. Free service limits apply.</p>
+      </details>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script id="fb-online-multiplayer-js">
+  (() => {
+    const $ = id => document.getElementById(id);
+    const canvas = $('fb-mp-canvas');
+    if (!canvas || canvas.dataset.fbBound) return;
+    canvas.dataset.fbBound = '1';
+    const ctx = canvas.getContext('2d');
+    const ids = {url:'fb-mp-url',key:'fb-mp-key',name:'fb-mp-name',room:'fb-mp-room'};
+    const stored = key => { try{return localStorage.getItem(key)||''}catch(e){return ''} };
+    $(ids.url).value = stored('fb_mp_supabase_url');
+    $(ids.key).value = stored('fb_mp_supabase_key');
+    $(ids.name).value = stored('fb_mp_name') || stored('fb_username') || 'Player';
+    let client=null, channel=null, myId='p'+Math.random().toString(36).slice(2,10), connected=false;
+    let players=new Map(), blocks=[], x=450, y=260, lastSend=0, pendingJoin=false;
+    const colors=['#46d9ff','#ff6b6b','#b7ff62','#ffbf5c','#d7a6ff','#ff8ccf'];
+    const status=t=>{$('fb-mp-status').textContent=t};
+    const clean=t=>String(t||'').replace(/[<>]/g,'').trim().slice(0,24);
+    function draw(){
+      const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#101b2b';ctx.fillRect(0,0,w,h);
+      ctx.strokeStyle='rgba(100,180,220,.13)';ctx.lineWidth=1;
+      for(let gx=0;gx<w;gx+=40){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,h);ctx.stroke()}
+      for(let gy=0;gy<h;gy+=40){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(w,gy);ctx.stroke()}
+      blocks.forEach(b=>{ctx.fillStyle=b.color||'#ffbf5c';ctx.fillRect(b.x-13,b.y-13,26,26);ctx.strokeStyle='#fff6';ctx.strokeRect(b.x-13,b.y-13,26,26)});
+      const all=[...players.values()];if(!all.some(p=>p.id===myId))all.push({id:myId,name:clean($(ids.name).value)||'Player',x,y});
+      all.forEach((p,i)=>{ctx.fillStyle=colors[i%colors.length];ctx.beginPath();ctx.arc(p.x,p.y,13,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 14px Arial';ctx.textAlign='center';ctx.fillText(clean(p.name)||'Player',p.x,p.y-20)});
+      $('fb-mp-block-count').textContent=blocks.length+' block'+(blocks.length===1?'':'s');
+      $('fb-mp-count').textContent=players.size+(connected?1:0);
+      $('fb-mp-players').innerHTML=(connected?[{id:myId,name:clean($(ids.name).value)||'You'},...Array.from(players.values()).filter(p=>p.id!==myId)]:[]).map(p=>'<div>● '+clean(p.name)+'</div>').join('')||'No room joined';
+      requestAnimationFrame(draw);
+    }
+    function state(){return {id:myId,name:clean($(ids.name).value)||'Player',x,y,at:Date.now()}}
+    function broadcast(event,payload){if(channel&&connected)channel.send({type:'broadcast',event,payload}).catch(()=>{})}
+    function sendPos(force=false){const now=Date.now();if(!force&&now-lastSend<65)return;lastSend=now;const p=state();players.set(myId,p);broadcast('position',p)}
+    function move(dx,dy){x=Math.max(18,Math.min(canvas.width-18,x+dx));y=Math.max(18,Math.min(canvas.height-18,y+dy));sendPos(true)}
+    function save(){try{localStorage.setItem('fb_mp_supabase_url',$(ids.url).value.trim());localStorage.setItem('fb_mp_supabase_key',$(ids.key).value.trim());localStorage.setItem('fb_mp_name',clean($(ids.name).value));status('Connection saved on this device.')}catch(e){status('Could not save settings in this browser.')}}
+    $('fb-mp-save').addEventListener('click',save);
+    $('fb-mp-join').addEventListener('click',async()=>{
+      const url=$(ids.url).value.trim().replace(/\/+$/,''),key=$(ids.key).value.trim(),room=clean($(ids.room).value).toUpperCase().replace(/[^A-Z0-9_-]/g,'').slice(0,24);
+      if(!url||!key){status('First paste your Supabase Project URL and public key, then press Save connection. Open “One-time setup” for help.');return}
+      if(!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)){status('That URL does not look like a Supabase project URL. Copy it from Project Settings → API.');return}
+      if(!room){status('Enter a room code first.');return}
+      if(!window.supabase||!window.supabase.createClient){status('The online connection library did not load. Check your internet connection and refresh the page.');return}
+      try{
+        if(channel){await client.removeChannel(channel);channel=null}connected=false;players.clear();blocks=[];save();
+        client=window.supabase.createClient(url,key,{realtime:{params:{eventsPerSecond:20}}});
+        channel=client.channel('funblok-room-'+room,{config:{presence:{key:myId},broadcast:{self:false}}});
+        channel.on('presence',{event:'sync'},()=>{
+          const state=channel.presenceState();players.clear();
+          Object.values(state).flat().forEach(p=>{if(p.id!==myId)players.set(p.id,p)});
+          if(connected)status('Connected to room '+room+'. Share this code with friends: '+room);
+        });
+        channel.on('broadcast',{event:'position'},({payload})=>{if(payload&&payload.id!==myId)players.set(payload.id,payload)});
+        channel.on('broadcast',{event:'block'},({payload})=>{if(payload&&payload.id&&!blocks.some(b=>b.id===payload.id))blocks.push(payload)});
+        channel.on('broadcast',{event:'world-sync-request'},()=>broadcast('world-sync',{blocks}));
+        channel.on('broadcast',{event:'world-sync'},({payload})=>{if(payload&&Array.isArray(payload.blocks)){const known=new Set(blocks.map(b=>b.id));payload.blocks.forEach(b=>{if(b&&b.id&&!known.has(b.id)){blocks.push(b);known.add(b.id)}})}});
+        channel.subscribe(async statusText=>{
+          if(statusText==='SUBSCRIBED'){
+            connected=true;await channel.track(state());sendPos(true);broadcast('world-sync-request',{from:myId});
+            status('Connected to room '+room+'. Share this room code with friends: '+room);
+          } else if(statusText==='CHANNEL_ERROR'||statusText==='TIMED_OUT'||statusText==='CLOSED'){
+            connected=false;status('Could not connect to the room. Check the URL/key, your internet, and that Realtime is enabled in Supabase.');
+          }
+        });
+      }catch(e){connected=false;status('Connection failed: '+(e&&e.message?e.message:'check project settings'))}
+    });
+    $('fb-mp-leave').addEventListener('click',async()=>{if(channel&&client){try{await client.removeChannel(channel)}catch(e){}}channel=null;connected=false;players.clear();status('You left the room.');});
+    function placeBlock(px=x,py=y){const b={id:myId+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,5),x:Math.max(14,Math.min(canvas.width-14,px)),y:Math.max(14,Math.min(canvas.height-14,py)),color:colors[Math.floor(Math.random()*colors.length)]};blocks.push(b);broadcast('block',b)}
+    $('fb-mp-add-block').addEventListener('click',()=>{if(!connected){status('Join a room before placing shared blocks.');return}placeBlock(x+25,y+10)});
+    canvas.addEventListener('pointerdown',e=>{if(!connected){status('Join a room first.');return}const r=canvas.getBoundingClientRect();placeBlock((e.clientX-r.left)*canvas.width/r.width,(e.clientY-r.top)*canvas.height/r.height)});
+    const keyMap={ArrowUp:[0,-10],w:[0,-10],W:[0,-10],ArrowDown:[0,10],s:[0,10],S:[0,10],ArrowLeft:[-10,0],a:[-10,0],A:[-10,0],ArrowRight:[10,0],d:[10,0],D:[10,0]};
+    window.addEventListener('keydown',e=>{if(!connected)return;if(keyMap[e.key]&& !/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();move(...keyMap[e.key])}});
+    document.querySelectorAll('[data-mp-move]').forEach(b=>b.addEventListener('click',()=>{if(!connected){status('Join a room first.');return}const m=b.dataset.mpMove;move(m==='left'?-12:m==='right'?12:0,m==='up'?-12:m==='down'?12:0)}));
+    let lastTrack=0;setInterval(()=>{if(connected&&channel){const now=Date.now();if(now-lastTrack>1000){lastTrack=now;channel.track(state()).catch(()=>{})}sendPos()}},80);
+    draw();
+  })();
+  </script>
+
+
   <div class="panel">
     <div class="panel-title">Studio &mdash; Build Mode</div>
     <div class="panel-body">
