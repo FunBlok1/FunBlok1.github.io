@@ -5802,3 +5802,43 @@ body:not(.future-theme) input, body:not(.future-theme) textarea, body:not(.futur
 </style>
 </body>
 </html>
+
+
+<style id="funblok-compact-layout">
+/* FunBlok compact layout polish */
+:root{--fb-space:14px}
+#navlinks{gap:6px!important;flex-wrap:wrap}
+#navlinks a,#navlinks button{padding:8px 11px!important;border-radius:7px!important}
+.page{max-width:1240px;margin-left:auto;margin-right:auto}
+.panel{margin:0 0 16px!important;border-radius:10px!important;overflow:hidden}
+.panel-title{padding:13px 16px!important;letter-spacing:.01em}
+.panel-body{padding:16px!important}
+#players-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;gap:10px!important}
+#gamegrid,#gamegrid2{grid-template-columns:repeat(auto-fill,minmax(155px,1fr))!important;gap:12px!important}
+.gamecard{min-width:0!important;border-radius:9px!important;overflow:hidden}
+.gamecard .thumb{min-height:82px;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:800}
+.gamecard .info{padding:10px 11px 12px!important}
+.gamecard .gname{font-size:13px!important;line-height:1.35}
+.gamecard .plays{font-size:11px!important;line-height:1.45}
+.fb-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))!important;gap:14px!important}
+.fb-game{min-width:0;border-radius:10px!important;overflow:hidden;transition:transform .15s ease,box-shadow .15s ease}
+.fb-game:hover{transform:translateY(-2px)}
+table{width:100%;border-collapse:collapse}
+#page-admin .panel-body,#page-owner .panel-body,#page-coowner .panel-body{overflow-x:auto}
+button,a,input,select,textarea{max-width:100%}
+@media(max-width:720px){
+  #navlinks{display:flex!important;gap:5px!important}
+  #navlinks a,#navlinks button{font-size:12px!important;padding:7px 9px!important}
+  .page{padding-left:10px!important;padding-right:10px!important}
+  .panel-body{padding:12px!important}
+  #gamegrid,#gamegrid2{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  #players-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .fb-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  .fb-game{min-height:0!important}
+  .fb-game-art{min-height:78px!important}
+  #page-admin table,#page-owner table,#page-coowner table{min-width:640px}
+}
+@media(max-width:380px){
+  #gamegrid,#gamegrid2,.fb-grid{grid-template-columns:minmax(0,1fr)!important}
+}
+</style>
