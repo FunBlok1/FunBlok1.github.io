@@ -2760,9 +2760,27 @@ function initThreeDWorldGame(holder, id) {
   const animate=()=>{if(disposed)return;raf=requestAnimationFrame(animate);
    const forward=keys.w||keys.arrowup||touch.forward,back=keys.s||keys.arrowdown||touch.back,left=keys.a||keys.arrowleft||touch.left,right=keys.d||keys.arrowright||touch.right;
    const speed=.13;player.position.x+=((right?1:0)-(left?1:0))*speed;player.position.z+=((back?1:0)-(forward?1:0))*speed;
-   if((keys[" "]||keys.space)&&grounded){vy=.19;grounded=false;}player.position.y+=vy;vy-=.009;
-   if(player.position.y<=.85){player.position.y=.85;vy=0;grounded=true;}
+   if((keys[" "]||keys.space||touch.jump)&&grounded){vy=.19;grounded=false;}
+   const previousFeet=player.position.y-.675;
+   player.position.y+=vy;
+   const nextFeet=player.position.y-.675;
+   vy-=.009;
+   // Land on actual 3D platforms, not just the invisible base floor.
+   if(vy<=0){
+    let landingTop=-0.05;
+    for(const solid of solids){
+     const p=solid.mesh.position;
+     const top=p.y+solid.h/2;
+     const withinX=Math.abs(player.position.x-p.x)<(solid.w/2+.32);
+     const withinZ=Math.abs(player.position.z-p.z)<(solid.d/2+.32);
+     if(withinX&&withinZ&&previousFeet>=top-.12&&nextFeet<=top+.08&&top>=landingTop)landingTop=top;
+    }
+    if(nextFeet<=landingTop){player.position.y=landingTop+.675;vy=0;grounded=true;}
+    else grounded=false;
+   } else grounded=false;
    player.position.x=Math.max(-17,Math.min(17,player.position.x));player.position.z=Math.max(-36,Math.min(9,player.position.z));
+   // Falling off the course respawns the player instead of leaving the game stuck.
+   if(player.position.y < -8){player.position.set(0,.85,5);vy=0;grounded=true;statusEl.textContent="You fell — back to the start!";}
    player.rotation.y=Math.atan2((right?1:0)-(left?1:0),(forward?1:0)-(back?1:0));
    items.forEach(o=>{if(!o.got&&player.position.distanceTo(o.mesh.position)<1.25){o.got=true;scene.remove(o.mesh);score++;scoreEl.textContent="Coins: "+score;statusEl.textContent="Nice! "+score+" collected";}});
    // Smooth follow camera and animate collectible gems.
