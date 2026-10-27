@@ -2649,8 +2649,8 @@ function launchGame(id) {
       coinclicker: () => initCoinClicker(holder),
       obby: () => initObby(holder),
       dodge: () => initDodge(holder),
-      skyjumper: () => initSkyJumper(holder),
-      coinrush: () => initCoinRush(holder),
+      skyjumper: () => (window.THREE ? initSkyJumper(holder) : initMegaArcade(holder, id)),
+      coinrush: () => (window.THREE ? initCoinRush(holder) : initMegaArcade(holder, id)),
       disaster: () => initMegaArcade(holder, id),
       lava: () => initMegaArcade(holder, id),
       battle: () => initMegaArcade(holder, id),
@@ -2665,7 +2665,11 @@ function launchGame(id) {
     start();
   } catch (error) {
     console.error("FunBlok could not launch game:", id, error);
-    holder.innerHTML = '<div class="panel-body"><p>This game could not start. Refresh FunBlok and try again.</p><button type="button" class="btn btn-outline" onclick="showGameSelector()">Back to games</button></div>';
+    // If the Three.js CDN is blocked or offline, keep the game playable in a lightweight fallback.
+    if ((id === "skyjumper" || id === "coinrush") && typeof initMegaArcade === "function") {
+      try { initMegaArcade(holder, id); return; } catch (fallbackError) { console.error("FunBlok fallback failed:", fallbackError); }
+    }
+    holder.innerHTML = '<div class="panel-body"><p>This game could not start. Check your connection and try again.</p><button type="button" class="btn btn-outline" onclick="showGameSelector()">Back to games</button></div>';
   }
 }
 
@@ -2683,6 +2687,8 @@ function stopCurrentArcadeGame() {
 /* FUNBLOK MEGA ARCADE: eight playable mini-worlds */
 function initMegaArcade(holder,id){
  const config={
+ skyjumper:{title:"SKY JUMPER",sub:"Jump across floating platforms and collect energy orbs.",goal:"Collect as many orbs as you can",bg:"#142b43"},
+ coinrush:{title:"COIN RUSH",sub:"Run through the course and collect coins.",goal:"Collect coins before time runs out",bg:"#142b43"},
  disaster:{title:"DISASTER SURVIVAL",sub:"Watch the warnings. Move fast. Stay alive.",goal:"Survive for 45 seconds",bg:"#18243a"},
  lava:{title:"RISING LAVA",sub:"Jump between platforms before the lava catches you.",goal:"Reach the green beacon",bg:"#321a1a"},
  battle:{title:"BLOCK BATTLE ARENA",sub:"Collect energy and blast the training drones.",goal:"Score 15 hits",bg:"#201938"},
@@ -4889,7 +4895,7 @@ function inject(){
  host.innerHTML=`
  <div class="fb-card fb-hero"><div class="fb-kicker">FUNBLOK // NEXT GEN</div><div class="fb-title">Play. Create. Own your world.</div><div class="fb-sub">A creator-first social game platform with persistent avatars, discovery, Studio tools, live presence, quests, events and a cleaner cross-device experience.</div><div class="fb-actions"><button class="fb-btn primary" id="fb-play">▶ Play something</button><button class="fb-btn" id="fb-create">✦ Open Studio Pro</button><button class="fb-btn" id="fb-avatar">◉ Avatar Lab</button></div></div>
  <div class="fb-topgrid"><div class="fb-card fb-stat"><div><small>PLAYER LEVEL</small><strong id="fb-level">1</strong></div><div class="fb-ping"><span class="fb-dot"></span><span id="fb-ping-text">LIVE</span></div></div><div class="fb-card fb-stat"><div><small>XP</small><strong id="fb-xp">0</strong></div><div class="fb-muted">next 100</div></div><div class="fb-card fb-stat"><div><small>STREAK</small><strong id="fb-streak">1🔥</strong></div><div class="fb-muted">daily</div></div></div>
- <div class="fb-section-title"><h2>Discover worlds</h2><span class="fb-muted">8 featured experiences</span></div><div id="fb-games" class="fb-grid"></div>
+ <div class="fb-section-title"><h2>Discover worlds</h2><span class="fb-muted">14 playable experiences</span></div><div id="fb-games" class="fb-grid"></div>
  
  
  <div class="fb-section-title"><h2>Chaos Arena</h2><span class="fb-muted">A playable survival game</span></div>
