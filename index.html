@@ -2624,6 +2624,20 @@ function renderGameGrid(elId, clickable) {
   });
 }
 
+function saveGameBestScore(gameId, score) {
+  const me = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  if (!me || !me.username || !Number.isFinite(score)) return;
+  const users = loadUsers();
+  const key = me.username.toLowerCase();
+  const record = users[key];
+  if (!record) return;
+  const progress = record.gameProgress && typeof record.gameProgress === "object" ? record.gameProgress : {};
+  const previous = Number(progress[gameId] || 0);
+  if (score <= previous) return;
+  users[key] = {...record, gameProgress:{...progress,[gameId]:score}};
+  saveUsers(users);
+}
+
 function launchGame(id) {
   const game = gamesList.find(g => g.id === id);
   if (!game) { console.warn("FunBlok game not found:", id); return; }
@@ -2782,7 +2796,7 @@ function initThreeDWorldGame(holder, id) {
    // Falling off the course respawns the player instead of leaving the game stuck.
    if(player.position.y < -8){player.position.set(0,.85,5);vy=0;grounded=true;statusEl.textContent="You fell — back to the start!";}
    player.rotation.y=Math.atan2((right?1:0)-(left?1:0),(forward?1:0)-(back?1:0));
-   items.forEach(o=>{if(!o.got&&player.position.distanceTo(o.mesh.position)<1.25){o.got=true;scene.remove(o.mesh);score++;scoreEl.textContent="Coins: "+score;statusEl.textContent="Nice! "+score+" collected";}});
+   items.forEach(o=>{if(!o.got&&player.position.distanceTo(o.mesh.position)<1.25){o.got=true;scene.remove(o.mesh);score++;scoreEl.textContent="Coins: "+score;statusEl.textContent="Nice! "+score+" collected";saveGameBestScore(id,score);}});
    // Smooth follow camera and animate collectible gems.
    camera.position.lerp(new THREE.Vector3(player.position.x*.55,player.position.y+5.2,player.position.z+8.5),.08);camera.lookAt(player.position.x,player.position.y+.3,player.position.z-2);
    items.forEach(o=>{if(!o.got){o.mesh.rotation.y+=.025;o.mesh.rotation.x+=.012;}});
