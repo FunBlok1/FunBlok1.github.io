@@ -2598,35 +2598,64 @@ function gameCardSubtext(g) {
 
 function renderGameGrid(elId, clickable) {
   const grid = document.getElementById(elId);
+  if (!grid) return;
   grid.innerHTML = gamesList.map(g => `
-    <div class="gamecard" ${clickable ? `onclick="launchGame('${g.id}')"` : ""}>
+    <button type="button" class="gamecard" data-fb-game-id="${g.id}" ${clickable ? "" : "disabled"} aria-label="Open ${g.name}" style="text-align:left;width:100%;font:inherit;color:inherit;border:0;cursor:${clickable ? "pointer" : "default"}">
       <div class="thumb" style="background:${g.color};">${g.name.charAt(0)}</div>
       <div class="info">
         <div class="gname">${g.name}</div>
         <div class="plays">${gameCardSubtext(g)}</div>
       </div>
-    </div>
+    </button>
   `).join("");
+  if (clickable) grid.querySelectorAll("[data-fb-game-id]").forEach(card => {
+    card.addEventListener("click", () => launchGame(card.dataset.fbGameId));
+  });
 }
 
 function launchGame(id) {
   const game = gamesList.find(g => g.id === id);
-  if (!game) return;
+  if (!game) { console.warn("FunBlok game not found:", id); return; }
   if (game.kind === "studio") { showPage("studio"); return; }
 
-  document.getElementById("game-select-panel").style.display = "none";
-  document.getElementById("game-stage-panel").style.display = "block";
-  document.getElementById("game-stage-title").textContent = game.name;
+  const selectPanel = document.getElementById("game-select-panel");
+  const stagePanel = document.getElementById("game-stage-panel");
+  const title = document.getElementById("game-stage-title");
+  const holder = document.getElementById("game-stage-holder");
+  if (!selectPanel || !stagePanel || !title || !holder) {
+    console.error("FunBlok game screen is missing required elements.");
+    if (typeof showPage === "function") showPage("games");
+    return;
+  }
+  selectPanel.style.display = "none";
+  stagePanel.style.display = "block";
+  title.textContent = game.name;
 
   stopCurrentArcadeGame();
-  const holder = document.getElementById("game-stage-holder");
   holder.innerHTML = "";
-  if (id === "coinclicker") initCoinClicker(holder);
-  if (id === "obby") initObby(holder);
-  if (id === "dodge") initDodge(holder);
-  if (id === "skyjumper") initSkyJumper(holder);
-  if (id === "coinrush") initCoinRush(holder);
-  if (["disaster","lava","battle","tycoon","zombie","space","tower","treasure"].includes(id)) initMegaArcade(holder,id);
+  try {
+    const launchers = {
+      coinclicker: () => initCoinClicker(holder),
+      obby: () => initObby(holder),
+      dodge: () => initDodge(holder),
+      skyjumper: () => initSkyJumper(holder),
+      coinrush: () => initCoinRush(holder),
+      disaster: () => initMegaArcade(holder, id),
+      lava: () => initMegaArcade(holder, id),
+      battle: () => initMegaArcade(holder, id),
+      tycoon: () => initMegaArcade(holder, id),
+      zombie: () => initMegaArcade(holder, id),
+      space: () => initMegaArcade(holder, id),
+      tower: () => initMegaArcade(holder, id),
+      treasure: () => initMegaArcade(holder, id)
+    };
+    const start = launchers[id];
+    if (!start) throw new Error("This game does not have a launcher yet.");
+    start();
+  } catch (error) {
+    console.error("FunBlok could not launch game:", id, error);
+    holder.innerHTML = '<div class="panel-body"><p>This game could not start. Refresh FunBlok and try again.</p><button type="button" class="btn btn-outline" onclick="showGameSelector()">Back to games</button></div>';
+  }
 }
 
 function showGameSelector() {
