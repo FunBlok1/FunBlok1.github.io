@@ -4599,7 +4599,7 @@ function renderAll() {
   checkKicked();
   renderAuthBox();
   renderAccountPage();
-  renderGameGrid("gamegrid", false);
+  renderGameGrid("gamegrid", true);
   renderGameGrid("gamegrid2", true);
   renderAdminTable();
   renderCoownerTable();
@@ -5717,6 +5717,36 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 #auth-forms .form-error{min-height:18px;margin-top:8px;color:#b42318;font-size:12px;line-height:1.5}
 #auth-forms h4{font-size:15px!important;color:#00559e!important}
 @media(max-width:520px){#auth-forms>div:first-child>div{padding:12px}}
+
+/* FUNBLOK CLASSIC REFRESH — responsive, crisp block-game UI */
+body:not(.future-theme) { background:#e9eef5; color:#202b3c; }
+body:not(.future-theme) #topbar { background:linear-gradient(180deg,#1976c9 0%,#07549a 100%); box-shadow:0 2px 0 #063d70,0 4px 12px rgba(18,54,91,.16); }
+body:not(.future-theme) #hero { background:linear-gradient(135deg,#1678c9,#07549a 68%,#063d70); border:1px solid #06477f; border-radius:6px; box-shadow:0 5px 0 rgba(6,61,112,.12); }
+body:not(.future-theme) .panel { border:1px solid #c8d4e2; border-radius:6px; box-shadow:0 2px 6px rgba(22,48,78,.07); overflow:hidden; }
+body:not(.future-theme) .panel-title { background:linear-gradient(#f8fbff,#e7eef7); color:#173c61; border-bottom:1px solid #cbd8e6; }
+body:not(.future-theme) .btn, body:not(.future-theme) button.btn { border-radius:4px; box-shadow:0 2px 0 rgba(0,0,0,.12); transition:filter .15s,transform .15s,box-shadow .15s; }
+body:not(.future-theme) .btn:hover, body:not(.future-theme) button.btn:hover { filter:brightness(1.06); transform:translateY(-1px); }
+body:not(.future-theme) #navlinks a { border-radius:4px; transition:background .15s,color .15s; }
+body:not(.future-theme) #navlinks a:hover, body:not(.future-theme) #navlinks a.active { background:#dcecff; color:#064d89; }
+body:not(.future-theme) .gamecard { min-width:0; padding:0; border:1px solid #cbd6e2; border-radius:6px; background:#fff; box-shadow:0 2px 4px rgba(18,48,80,.08); text-align:left; }
+body:not(.future-theme) .gamecard:hover, body:not(.future-theme) .gamecard:focus-visible { border-color:#1678c9; box-shadow:0 5px 14px rgba(22,120,201,.18); outline:2px solid transparent; }
+body:not(.future-theme) .gamecard:disabled { opacity:1; cursor:pointer; }
+body:not(.future-theme) .thumb { height:108px; font-size:30px; text-shadow:0 2px 2px rgba(0,0,0,.2); }
+body:not(.future-theme) .gamecard .info { padding:10px 11px 12px; }
+body:not(.future-theme) .gamecard .gname { color:#1b334c; font-size:13px; }
+body:not(.future-theme) .gamecard .plays { color:#64758a; line-height:1.4; }
+body:not(.future-theme) input, body:not(.future-theme) textarea, body:not(.future-theme) select { border-radius:4px; border-color:#b8c7d8; }
+@media (max-width:760px) {
+  #gamegrid, #gamegrid2 { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:9px; }
+  body:not(.future-theme) .thumb { height:84px; }
+  #navlinks { flex-wrap:wrap; }
+  #navlinks a { padding:7px 8px; }
+}
+@media (max-width:420px) {
+  #gamegrid, #gamegrid2 { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:7px; }
+  body:not(.future-theme) .gamecard .info { padding:8px; }
+}
+
 </style>
 </body>
 </html>
