@@ -3,7 +3,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>FunBlok</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Play and create block-style games in FunBlok. Explore mini-games, build worlds in Studio, customize your avatar, and join the community.">
+<meta name="theme-color" content="#00559e">
+<meta property="og:type" content="website">
+<meta property="og:title" content="FunBlok — Play, Create, Explore">
+<meta property="og:description" content="Play mini-games, build worlds, customize your avatar, and explore FunBlok.">
+<meta property="og:url" content="https://funblok1.github.io/">
+<title>FunBlok — Play, Create, Explore</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -1458,8 +1465,8 @@ function startPresence() {
       if (!current) return;
       fetch(FUNBLOK_API + "/presence", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({username:current.username})
-      }).catch(()=>{});
+        body:JSON.stringify({username:current.username}), keepalive:true
+      }).catch(() => {});
     };
     send();
     clearInterval(window.funblokPresenceTimer);
@@ -1470,44 +1477,68 @@ function startPresence() {
     console.warn("FunBlok online presence unavailable: Realtime client did not load.");
     return;
   }
-  if (funblokPresenceChannel) { try { FUNBLOK_DB.removeChannel(funblokPresenceChannel); } catch(e) {} }
+  if (funblokPresenceChannel) {
+    try { FUNBLOK_DB.removeChannel(funblokPresenceChannel); } catch(e) {}
+    funblokPresenceChannel = null;
+  }
   if (funblokPresenceRetry) clearTimeout(funblokPresenceRetry);
+  if (window.funblokPresenceHeartbeat) clearInterval(window.funblokPresenceHeartbeat);
   const identity = (me && me.username) || "guest";
-  funblokPresenceChannel = FUNBLOK_DB.channel("funblok-online-users", {
+  const channel = FUNBLOK_DB.channel("funblok-online-users", {
     config:{presence:{key:identity.toLowerCase() + "-" + Math.random().toString(36).slice(2,8)}}
   });
+  funblokPresenceChannel = channel;
   const readPresence = () => {
-    const state = funblokPresenceChannel.presenceState();
+    if (funblokPresenceChannel !== channel) return;
     const next = {};
-    Object.values(state || {}).flat().forEach(p => {
-      if (!p || !p.username) return;
-      next[String(p.username).toLowerCase()] = {username:String(p.username), lastSeen:Date.now()};
+    Object.values(channel.presenceState() || {}).flat().forEach(p => {
+      if (!p || !p.username || p.online === false) return;
+      const name = String(p.username).trim();
+      if (name) next[name.toLowerCase()] = {username:name, lastSeen:Date.now()};
     });
     funblokOnlinePlayers = next;
     renderOnlinePresence();
   };
-  funblokPresenceChannel.on("presence", {event:"sync"}, readPresence);
-  funblokPresenceChannel.subscribe(async status => {
+  channel.on("presence", {event:"sync"}, readPresence);
+  channel.on("presence", {event:"join"}, readPresence);
+  channel.on("presence", {event:"leave"}, readPresence);
+  channel.subscribe(async status => {
     if (status === "SUBSCRIBED") {
-      const current = typeof getCurrentUser === "function" ? getCurrentUser() : null;
-      if (current) {
-        try { await funblokPresenceChannel.track({username:current.username, online:true, joinedAt:new Date().toISOString()}); }
-        catch(e) { console.warn("FunBlok presence tracking failed", e); }
-      }
+      const trackCurrentUser = async () => {
+        const current = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+        if (!current || funblokPresenceChannel !== channel) return;
+        try {
+          await channel.track({username:current.username, online:true, lastSeen:new Date().toISOString()});
+        } catch(e) { console.warn("FunBlok presence heartbeat failed", e); }
+      };
+      await trackCurrentUser();
+      clearInterval(window.funblokPresenceHeartbeat);
+      window.funblokPresenceHeartbeat = setInterval(trackCurrentUser, 20000);
       readPresence();
-    } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+    } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+      if (funblokPresenceChannel === channel) funblokPresenceChannel = null;
+      clearInterval(window.funblokPresenceHeartbeat);
       funblokPresenceRetry = setTimeout(startPresence, 5000);
     }
   });
-  document.addEventListener("visibilitychange", async () => {
-    if (!document.hidden && funblokPresenceChannel) {
+  if (!window.funblokPresenceVisibilityBound) {
+    window.funblokPresenceVisibilityBound = true;
+    document.addEventListener("visibilitychange", async () => {
+      if (document.hidden || !funblokPresenceChannel) return;
       const current = typeof getCurrentUser === "function" ? getCurrentUser() : null;
-      if (current) try { await funblokPresenceChannel.track({username:current.username, online:true, joinedAt:new Date().toISOString()}); } catch(e) {}
-    }
-  });
-  window.addEventListener("beforeunload", () => {
-    if (funblokPresenceChannel && FUNBLOK_DB) FUNBLOK_DB.removeChannel(funblokPresenceChannel);
-  });
+      if (current) try {
+        await funblokPresenceChannel.track({username:current.username, online:true, lastSeen:new Date().toISOString()});
+      } catch(e) {}
+      renderOnlinePresence();
+    });
+  }
+  if (!window.funblokPresenceUnloadBound) {
+    window.funblokPresenceUnloadBound = true;
+    window.addEventListener("beforeunload", () => {
+      clearInterval(window.funblokPresenceHeartbeat);
+      if (funblokPresenceChannel && FUNBLOK_DB) FUNBLOK_DB.removeChannel(funblokPresenceChannel);
+    });
+  }
 }
 
 /* =========================================================
