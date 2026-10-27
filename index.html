@@ -2645,21 +2645,10 @@ function launchGame(id) {
   stopCurrentArcadeGame();
   holder.innerHTML = "";
   try {
-    const launchers = {
-      coinclicker: () => initCoinClicker(holder),
-      obby: () => initObby(holder),
-      dodge: () => initDodge(holder),
-      skyjumper: () => (window.THREE ? initSkyJumper(holder) : initMegaArcade(holder, id)),
-      coinrush: () => (window.THREE ? initCoinRush(holder) : initMegaArcade(holder, id)),
-      disaster: () => initMegaArcade(holder, id),
-      lava: () => initMegaArcade(holder, id),
-      battle: () => initMegaArcade(holder, id),
-      tycoon: () => initMegaArcade(holder, id),
-      zombie: () => initMegaArcade(holder, id),
-      space: () => initMegaArcade(holder, id),
-      tower: () => initMegaArcade(holder, id),
-      treasure: () => initMegaArcade(holder, id)
-    };
+    const launchers = Object.fromEntries(gamesList.filter(g => g.kind !== "studio").map(g => [
+      g.id,
+      () => window.THREE ? initThreeDWorldGame(holder, g.id) : initMegaArcade(holder, g.id)
+    ]));
     const start = launchers[id];
     if (!start) throw new Error("This game does not have a launcher yet.");
     start();
@@ -2682,6 +2671,97 @@ function showGameSelector() {
 let currentGameCleanup = null;
 function stopCurrentArcadeGame() {
   if (currentGameCleanup) { currentGameCleanup(); currentGameCleanup = null; }
+}
+
+/* FUNBLOK 3D WORLDS — shared 3D engine for every arcade game.
+   Three selectable maps per game, keyboard + touch controls, and responsive sizing. */
+function initThreeDWorldGame(holder, id) {
+ const game = gamesList.find(g => g.id === id);
+ const themes = {
+  coinclicker:{sky:0x182a45,ground:0x315d4a,accent:0xffd34f,label:"Coin Fields"},
+  obby:{sky:0x17233d,ground:0x3d385e,accent:0xff78d1,label:"Sky Obby"},
+  dodge:{sky:0x271c2b,ground:0x633d43,accent:0xff604f,label:"Neon Circuit"},
+  skyjumper:{sky:0x102a48,ground:0x246b83,accent:0x64f5ff,label:"Cloud Isles"},
+  coinrush:{sky:0x132d35,ground:0x28634f,accent:0xffd34f,label:"Emerald Run"},
+  disaster:{sky:0x3a2424,ground:0x66514a,accent:0xff754f,label:"Storm Island"},
+  lava:{sky:0x301b1b,ground:0x56302b,accent:0xff7b22,label:"Lava Rift"},
+  battle:{sky:0x251b3c,ground:0x51416c,accent:0xff5b86,label:"Training Arena"},
+  tycoon:{sky:0x18362c,ground:0x3a7653,accent:0x7dffad,label:"Builder Valley"},
+  zombie:{sky:0x1d2a20,ground:0x43513b,accent:0x8dce70,label:"Overgrown City"},
+  space:{sky:0x090f28,ground:0x202a54,accent:0x8caaff,label:"Moon Base"},
+  tower:{sky:0x142b43,ground:0x3d6a91,accent:0x70d6ff,label:"Sky Tower"},
+  treasure:{sky:0x342516,ground:0x7a5a2d,accent:0xffd06b,label:"Lost Temple"}
+ };
+ const base=themes[id]||themes.skyjumper;
+ holder.innerHTML=`<section style="color:#eef6ff;background:#0b1220;border:1px solid #2b3c57;border-radius:14px;padding:12px;font-family:system-ui">
+ <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><h2 style="margin:0;color:#55e8ff">${game.name} 3D</h2><p id="fb3d-map-name" style="margin:4px 0;color:#a8bdd4">${base.label}</p></div>
+ <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" data-map="0">Map 1</button><button class="btn" data-map="1">Map 2</button><button class="btn" data-map="2">Map 3</button></div></div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0"><span class="fb-tag" id="fb3d-score">Coins: 0</span><span class="fb-tag" id="fb3d-status">Explore the map</span><button class="btn" id="fb3d-reset">Restart</button></div>
+ <div id="fb3d-viewport" style="width:100%;height:clamp(300px,58vw,540px);min-height:300px;overflow:hidden;border-radius:10px;background:#10192a;touch-action:none"></div>
+ <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px"><button class="btn" data-key="left">◀ Left</button><button class="btn" data-key="forward">▲ Forward</button><button class="btn" data-key="jump">Jump</button><button class="btn" data-key="back">▼ Back</button><button class="btn" data-key="right">Right ▶</button></div>
+ <p style="font-size:12px;color:#9fb1c9;margin-bottom:0">Move with WASD / arrow keys, Space to jump. Collect glowing blocks. Touch controls work on phones and tablets.</p></section>`;
+ const mount=holder.querySelector("#fb3d-viewport"),scoreEl=holder.querySelector("#fb3d-score"),statusEl=holder.querySelector("#fb3d-status"),mapName=holder.querySelector("#fb3d-map-name");
+ let scene,camera,renderer,player,clock,raf=0,mapIndex=0,score=0,vy=0,grounded=true,disposed=false;
+ const keys={},touch={},items=[],solids=[];let floorY=0;
+ const rendererOptions={antialias:true,alpha:false};
+ function mat(color,roughness=.75,emissive=0){return new THREE.MeshStandardMaterial({color,roughness,emissive,emissiveIntensity:emissive?0.45:0})}
+ function box(w,h,d,color,x,y,z,emissive=0){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,.72,emissive));mesh.position.set(x,y,z);scene.add(mesh);solids.push({mesh,w,h,d});return mesh}
+ function orb(x,y,z){const mesh=new THREE.Mesh(new THREE.IcosahedronGeometry(.32,1),mat(base.accent,.25,base.accent));mesh.position.set(x,y,z);scene.add(mesh);items.push({mesh,got:false});}
+ function buildMap(index){
+  mapIndex=index;score=0;vy=0;grounded=true;items.splice(0).forEach(o=>scene.remove(o.mesh));solids.splice(0);
+  while(scene.children.length>0)scene.remove(scene.children[0]);
+  scene.background=new THREE.Color(index===0?base.sky:index===1?0x17253b:0x252039);
+  scene.fog=new THREE.Fog(scene.background,18,68);
+  scene.add(new THREE.HemisphereLight(0xd9efff,base.ground,1.35));
+  const sun=new THREE.DirectionalLight(0xffffff,1.8);sun.position.set(-5,12,7);scene.add(sun);
+  const floor=box(38,1,52,base.ground,0,-.55,-12);
+  floorY=0;
+  // Three distinct layouts: open island, stepping platforms, and a winding obstacle course.
+  if(index===0){
+   for(let i=0;i<20;i++){const x=((i*7)%31)-15,z=-4-(i*11)%42;box(1.2,.6,1.2,i%2?0x64748b:base.accent,x,.3,z,i%2?0:base.accent);orb(x,1.25,z);}
+   for(let i=0;i<8;i++)box(2,1.4,2,0x526780,(i%2?1:-1)*(5+(i%3)),.2,-7-i*5);
+   mapName.textContent=[""+base.label,""+base.label+" — Floating Platforms",""+base.label+" — Obstacle Run"][index];
+  } else if(index===1){
+   for(let i=0;i<13;i++){const x=Math.sin(i*.85)*6,z=-3-i*3.2,y=.2+(i%3)*.7;box(3,y+1,3,i%2?base.accent:0x54759b,x,y/2,z,i%2?base.accent:0);orb(x,y+1.35,z);}
+   for(let i=0;i<6;i++)box(1.4,1.8,1.4,0x9b6d6d,Math.cos(i*1.4)*8,.4,-9-i*6);
+   mapName.textContent=base.label+" — Floating Platforms";
+  } else {
+   for(let i=0;i<16;i++){const x=Math.sin(i*1.1)*8,z=-3-i*2.7;box(4,.5,3,i%3===0?base.accent:0x526780,x,.05,z,i%3===0?base.accent:0);orb(x,1.1,z);}
+   for(let i=0;i<10;i++)box(1.4,1.5,1.4,0xff6a4d,Math.sin(i*2.2)*5,.35,-5-i*4);
+   mapName.textContent=base.label+" — Obstacle Run";
+  }
+  // Landmarks and outer boundaries make the world feel like a place, not an empty test scene.
+  for(let i=0;i<14;i++){const side=i%2?1:-1;box(1.2,2+(i%3),1.2,i%2?0x40536c:base.accent,side*(17+(i%3)),.5,-2-i*3.5,i%2?0:base.accent);}
+  player.position.set(0,.85,5);scene.add(player);camera.position.set(0,5.2,11);camera.lookAt(0,1,0);
+  scoreEl.textContent="Coins: 0";statusEl.textContent="Map "+(index+1)+" — explore!";
+ }
+ try {
+  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(65,1,.1,150);
+  renderer=new THREE.WebGLRenderer(rendererOptions);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;mount.appendChild(renderer.domElement);
+  player=new THREE.Mesh(new THREE.BoxGeometry(.9,1.35,.9),mat(0x27bfff,.55,0x0a4d83));player.castShadow=true;
+  const resize=()=>{if(disposed)return;const w=Math.max(320,mount.clientWidth||640),h=Math.max(280,mount.clientHeight||420);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
+  window.addEventListener("resize",resize);resize();buildMap(0);
+  const keydown=e=>{if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault();keys[e.key.toLowerCase()]=true;if(e.key===" "&&grounded){vy=.19;grounded=false;}};
+  const keyup=e=>{keys[e.key.toLowerCase()]=false;};
+  document.addEventListener("keydown",keydown);document.addEventListener("keyup",keyup);
+  holder.querySelectorAll("[data-map]").forEach(b=>b.addEventListener("click",()=>buildMap(Number(b.dataset.map))));
+  holder.querySelector("#fb3d-reset").addEventListener("click",()=>buildMap(mapIndex));
+  holder.querySelectorAll("[data-key]").forEach(b=>{const k=b.dataset.key;b.addEventListener("pointerdown",e=>{e.preventDefault();touch[k]=true;if(k==="jump"&&grounded){vy=.19;grounded=false;}});["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,()=>touch[k]=false));});
+  const animate=()=>{if(disposed)return;raf=requestAnimationFrame(animate);
+   const forward=keys.w||keys.arrowup||touch.forward,back=keys.s||keys.arrowdown||touch.back,left=keys.a||keys.arrowleft||touch.left,right=keys.d||keys.arrowright||touch.right;
+   const speed=.13;player.position.x+=((right?1:0)-(left?1:0))*speed;player.position.z+=((back?1:0)-(forward?1:0))*speed;
+   if((keys[" "]||keys.space)&&grounded){vy=.19;grounded=false;}player.position.y+=vy;vy-=.009;
+   if(player.position.y<=.85){player.position.y=.85;vy=0;grounded=true;}
+   player.position.x=Math.max(-17,Math.min(17,player.position.x));player.position.z=Math.max(-36,Math.min(9,player.position.z));
+   player.rotation.y=Math.atan2((right?1:0)-(left?1:0),(forward?1:0)-(back?1:0));
+   items.forEach(o=>{if(!o.got&&player.position.distanceTo(o.mesh.position)<1.25){o.got=true;scene.remove(o.mesh);score++;scoreEl.textContent="Coins: "+score;statusEl.textContent="Nice! "+score+" collected";}});
+   // Smooth follow camera and animate collectible gems.
+   camera.position.lerp(new THREE.Vector3(player.position.x*.55,player.position.y+5.2,player.position.z+8.5),.08);camera.lookAt(player.position.x,player.position.y+.3,player.position.z-2);
+   items.forEach(o=>{if(!o.got){o.mesh.rotation.y+=.025;o.mesh.rotation.x+=.012;}});
+   renderer.render(scene,camera);
+  };animate();
+  currentGameCleanup=()=>{disposed=true;cancelAnimationFrame(raf);window.removeEventListener("resize",resize);document.removeEventListener("keydown",keydown);document.removeEventListener("keyup",keyup);renderer.dispose();renderer.domElement.remove();};
+ } catch(err){console.error("FunBlok 3D engine failed",err);holder.innerHTML='<p style="padding:16px">3D could not start on this browser. Try reloading or use a browser with WebGL enabled.</p><button class="btn" onclick="showGameSelector()">Back to games</button>';}
 }
 
 /* FUNBLOK MEGA ARCADE: eight playable mini-worlds */
