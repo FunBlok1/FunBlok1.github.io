@@ -1584,6 +1584,8 @@ function signup(username, password) {
   };
   saveUsers(users);
   setCurrentUsername(username);
+  if (typeof startPresence === "function") startPresence();
+  renderOnlinePresence();
   return null;
 }
 
@@ -1593,10 +1595,18 @@ function login(username, password) {
   if (!record || record.password !== password) return "Incorrect username or password.";
   if (record.banned) return "This account has been banned.";
   setCurrentUsername(record.username);
+  // Presence starts at page load, when a visitor may still be logged out.
+  // Rejoin under the real account immediately after a successful login.
+  if (typeof startPresence === "function") startPresence();
+  renderOnlinePresence();
   return null;
 }
 
-function logout() { setCurrentUsername(null); renderAll(); }
+function logout() {
+  setCurrentUsername(null);
+  if (typeof startPresence === "function") startPresence();
+  renderAll();
+}
 
 /* Check if the currently logged-in user has been kicked since last check */
 function checkKicked() {
@@ -4943,7 +4953,21 @@ function renderItemForge(){const colors=FB.colors;const c=document.getElementByI
 function showWorldIdea(g){if(!g)return;fbSelectedWorld=g;const e=document.getElementById('fb-world-idea');if(e)e.innerHTML='<b style="font-size:18px">'+esc(g.name)+'</b><p>'+esc(g.description)+'</p><div class="fb-tags"><span class="fb-tag">'+esc(g.mode)+'</span><span class="fb-tag">'+esc(g.theme)+'</span></div><div class="fb-muted">Starter concept only — use Studio to build the actual playable world.</div>'}
 function renderWorldIdeaGenerator(){const ideas=makeWorldIdeas();const search=document.getElementById('fb-world-search');const count=document.getElementById('fb-world-count');function update(){const q=(search.value||'').toLowerCase();const matches=ideas.filter(g=>(g.name+' '+g.description+' '+g.mode+' '+g.theme).toLowerCase().includes(q));count.textContent=matches.length+' of '+ideas.length+' generated world ideas';if(matches.length&&!fbSelectedWorld)showWorldIdea(matches[Math.floor(Math.random()*matches.length)]);if(!matches.length)document.getElementById('fb-world-idea').textContent='No matching ideas. Try another search.'}search.oninput=()=>{fbSelectedWorld=null;update()};document.getElementById('fb-world-random').onclick=()=>{const q=(search.value||'').toLowerCase();const m=ideas.filter(g=>(g.name+' '+g.description+' '+g.mode+' '+g.theme).toLowerCase().includes(q));showWorldIdea(m[Math.floor(Math.random()*m.length)])};document.getElementById('fb-world-build').onclick=()=>{if(!fbSelectedWorld){toast('Generate an idea first');return}const w=getLocal('fb_pro_world',[]);w.push({type:'Block',color:FB.colors[Math.floor(Math.random()*FB.colors.length)],idea:fbSelectedWorld.name,created:Date.now()});saveLocal('fb_pro_world',w);if(typeof showPage==='function')showPage('studio');if(typeof studio==='function')studio();toast('Starter block added for '+fbSelectedWorld.name)};update();showWorldIdea(ideas[0])}
 
-function renderGames(){const e=document.getElementById('fb-games');if(!e)return;e.innerHTML=FB.games.map((g,i)=>`<button type="button" class="fb-card fb-game" data-game="${esc(g[0])}" aria-label="Play ${esc(g[0])}"><div class="fb-game-art">${g[1]}</div><div class="fb-game-body"><div class="fb-game-name">${esc(g[0])}</div><span class="fb-online">● ${g[3]} playing</span><div class="fb-tags"><span class="fb-tag">${esc(g[2])}</span><span class="fb-tag">Featured</span></div><span class="fb-game-action">▶ Play now</span></div></button>`).join('');e.querySelectorAll('.fb-game').forEach(x=>x.onclick=()=>{const title=(x.dataset.game||'').toLowerCase().replace(/[^a-z0-9]/g,'');const aliases={blocksandbox:'blocksandbox',coinrush:'coinrush',skyjumper:'skyjumper',coinclicker:'coinclicker',obbyrunner:'obby',dodgeracer:'dodge',disastersurvival:'disaster',risinglava:'lava',blockbattlearena:'battle',minitycoon:'tycoon',zombieescape:'zombie',spaceblaster:'space',towerclimb:'tower',treasurerush:'treasure'};let id=aliases[title];if(!id){const found=gamesList.find(g=>g.name.toLowerCase().replace(/[^a-z0-9]/g,'')===title||g.id===title);if(found)id=found.id;}if(id&&gamesList.some(g=>g.id===id)){xp(8);showPage('games');launchGame(id);return;}xp(8);showPage('games');const match=[...document.querySelectorAll('#gamegrid [data-fb-game-id]')].find(card=>{const game=gamesList.find(g=>g.id===card.dataset.fbGameId);return game&&game.name.toLowerCase().replace(/[^a-z0-9]/g,'')===title});if(match)match.click();else toast('That world is not playable yet. Try one of the games in the Games page.');})}
+function renderGames(){
+ const e=document.getElementById('fb-games');if(!e)return;
+ e.innerHTML=FB.games.map(g=>`<button type="button" class="fb-card fb-game" data-game="${esc(g[0])}" aria-label="Play ${esc(g[0])}"><div class="fb-game-art">${g[1]}</div><div class="fb-game-body"><div class="fb-game-name">${esc(g[0])}</div><span class="fb-online">● ${g[3]} playing</span><div class="fb-tags"><span class="fb-tag">${esc(g[2])}</span><span class="fb-tag">Featured</span></div><span class="fb-game-action">▶ Play now</span></div></button>`).join('');
+ const featuredLaunchers={
+  skylinerush:'dodge', blockfront:'battle', cozyharbor:'blocksandbox', dungeonzero:'zombie',
+  neonkart:'dodge', petgalaxy:'tycoon', buildverse:'blocksandbox', starfall:'space'
+ };
+ e.querySelectorAll('.fb-game').forEach(x=>x.onclick=()=>{
+  const title=(x.dataset.game||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const aliases={blocksandbox:'blocksandbox',coinrush:'coinrush',skyjumper:'skyjumper',coinclicker:'coinclicker',obbyrunner:'obby',dodgeracer:'dodge',disastersurvival:'disaster',risinglava:'lava',blockbattlearena:'battle',minitycoon:'tycoon',zombieescape:'zombie',spaceblaster:'space',towerclimb:'tower',treasurerush:'treasure'};
+  const id=aliases[title]||featuredLaunchers[title]||(gamesList.find(g=>g.name.toLowerCase().replace(/[^a-z0-9]/g,'')===title||g.id===title)||{}).id;
+  if(id&&gamesList.some(g=>g.id===id)){xp(8);showPage('games');launchGame(id);return;}
+  toast('This game is being prepared. Try another game from the Games page.');
+ });
+}
 function xp(n){let x=getLocal('fb_xp',0)+n,l=Math.floor(x/100)+1;saveLocal('fb_xp',x);document.getElementById('fb-xp').textContent=x;document.getElementById('fb-level').textContent=l}
 function renderMissions(){const e=document.getElementById('fb-missions');const m=[['Play a featured world','+10 XP'],['Open Studio Pro','+15 XP'],['Customize your avatar','+10 XP'],['Save a creation','+20 XP']];e.innerHTML=m.map((x,i)=>`<div class="fb-card"><b>${x[0]}</b><p class="fb-muted">Complete this mission</p><button class="fb-btn good" data-mission="${i}">${x[1]} Claim</button></div>`).join('');e.querySelectorAll('[data-mission]').forEach(b=>b.onclick=()=>{if(b.disabled)return;b.disabled=true;b.textContent='✓ Claimed';xp([10,15,10,20][+b.dataset.mission]);toast('Mission complete!')})}
 const FB_AVATAR_PRESETS=[
