@@ -4860,7 +4860,20 @@ body.fb-ultimate{background:radial-gradient(circle at 15% 0%,rgba(53,231,255,.10
 'use strict';
 const FB={
  games:[
-  ['Skyline Rush','🏙️','Racing','1.8K'],['Blockfront','🛡️','Action','942'],['Cozy Harbor','🌊','Social','736'],['Dungeon Zero','⚔️','Adventure','512'],['Neon Kart','🏎️','Racing','488'],['Pet Galaxy','🐾','Simulator','401'],['Buildverse','🧱','Sandbox','369'],['Starfall','🌌','Adventure','277']
+  ['Block Sandbox','🧱','Build mode','—','blocksandbox'],
+  ['Coin Rush','🪙','3D Endless','—','coinrush'],
+  ['Sky Jumper','☁️','3D Runner','—','skyjumper'],
+  ['Coin Clicker','🖱️','Simulator','—','coinclicker'],
+  ['Obby Runner','🏃','Parkour','—','obby'],
+  ['Dodge Racer','🏎️','Arcade','—','dodge'],
+  ['Disaster Survival','🌪️','Survival','—','disaster'],
+  ['Rising Lava','🌋','Parkour','—','lava'],
+  ['Block Battle Arena','🛡️','Action','—','battle'],
+  ['Mini Tycoon','🏗️','Builder','—','tycoon'],
+  ['Zombie Escape','🧟','Survival','—','zombie'],
+  ['Space Blaster','🚀','Shooter','—','space'],
+  ['Tower Climb','🗼','Platformer','—','tower'],
+  ['Treasure Rush','💎','Collectathon','—','treasure']
  ], colors:['#35e7ff','#9b7bff','#48f5a6','#ff6688','#ffc857','#ff8b45','#6d8cff','#f3f6ff','#2b3348','#b96cff'],
  avatar:{body:'#35e7ff',hair:'#171b29',skin:'#ffd0ae'}, parts:[], pingTimer:null, start:Date.now()
 };
@@ -4955,17 +4968,15 @@ function renderWorldIdeaGenerator(){const ideas=makeWorldIdeas();const search=do
 
 function renderGames(){
  const e=document.getElementById('fb-games');if(!e)return;
- e.innerHTML=FB.games.map(g=>`<button type="button" class="fb-card fb-game" data-game="${esc(g[0])}" aria-label="Play ${esc(g[0])}"><div class="fb-game-art">${g[1]}</div><div class="fb-game-body"><div class="fb-game-name">${esc(g[0])}</div><span class="fb-online">● ${g[3]} playing</span><div class="fb-tags"><span class="fb-tag">${esc(g[2])}</span><span class="fb-tag">Featured</span></div><span class="fb-game-action">▶ Play now</span></div></button>`).join('');
- const featuredLaunchers={
-  skylinerush:'dodge', blockfront:'battle', cozyharbor:'blocksandbox', dungeonzero:'zombie',
-  neonkart:'dodge', petgalaxy:'tycoon', buildverse:'blocksandbox', starfall:'space'
- };
+ const allGames=(Array.isArray(gamesList)?gamesList:[]).filter(g=>g&&g.id&&g.name);
+ e.innerHTML=allGames.map(g=>{
+  const icons={blocksandbox:'🧱',coinrush:'🪙',skyjumper:'☁️',coinclicker:'🖱️',obby:'🏃',dodge:'🏎️',disaster:'🌪️',lava:'🌋',battle:'🛡️',tycoon:'🏗️',zombie:'🧟',space:'🚀',tower:'🗼',treasure:'💎'};
+  return `<button type="button" class="fb-card fb-game" data-game-id="${esc(g.id)}" aria-label="Play ${esc(g.name)}"><div class="fb-game-art">${icons[g.id]||'🎮'}</div><div class="fb-game-body"><div class="fb-game-name">${esc(g.name)}</div><span class="fb-online">● Ready to play</span><div class="fb-tags"><span class="fb-tag">${esc(g.plays||'Game')}</span><span class="fb-tag">FunBlok</span></div><span class="fb-game-action">▶ Play now</span></div></button>`;
+ }).join('');
  e.querySelectorAll('.fb-game').forEach(x=>x.onclick=()=>{
-  const title=(x.dataset.game||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-  const aliases={blocksandbox:'blocksandbox',coinrush:'coinrush',skyjumper:'skyjumper',coinclicker:'coinclicker',obbyrunner:'obby',dodgeracer:'dodge',disastersurvival:'disaster',risinglava:'lava',blockbattlearena:'battle',minitycoon:'tycoon',zombieescape:'zombie',spaceblaster:'space',towerclimb:'tower',treasurerush:'treasure'};
-  const id=aliases[title]||featuredLaunchers[title]||(gamesList.find(g=>g.name.toLowerCase().replace(/[^a-z0-9]/g,'')===title||g.id===title)||{}).id;
+  const id=x.dataset.gameId;
   if(id&&gamesList.some(g=>g.id===id)){xp(8);showPage('games');launchGame(id);return;}
-  toast('This game is being prepared. Try another game from the Games page.');
+  toast('This game is unavailable right now. Refresh and try again.');
  });
 }
 function xp(n){let x=getLocal('fb_xp',0)+n,l=Math.floor(x/100)+1;saveLocal('fb_xp',x);document.getElementById('fb-xp').textContent=x;document.getElementById('fb-level').textContent=l}
