@@ -1564,11 +1564,11 @@ function signup(username, password) {
   const users = loadUsers();
   if (users[key]) return "That username is already taken.";
 
-  const isFoundingOwner = key === "kingjeff";
+  // Never grant staff privileges from a public username. Staff roles must be assigned by an authorized owner.
   users[key] = {
     username: username,
-    password: password, // plaintext demo storage — not for real production use
-    role: isFoundingOwner ? "owner" : "user",
+    password: password, // Legacy account store; production security requires server-side auth.
+    role: "user",
     banned: false,
     kicked: false,
     avatarColor: "#00559e",
@@ -5005,8 +5005,25 @@ function initFunProgression(){
  function renderAchievements(){const e=document.getElementById('fb-achievements'),xpNow=getLocal('fb_xp',0),world=getLocal('fb_pro_world',[]),avatar=getLocal('fb_avatar_lab',null),items=[['First Steps','Earn 10 XP',xpNow>=10],['Rising Star','Reach 500 XP',xpNow>=500],['Builder','Place 5 Studio objects',world.length>=5],['Fashionista','Save a custom avatar',!!avatar],['Daily Player','Claim a daily reward',getLocal('fb_daily_claimed','')===day]];e.innerHTML=items.map(a=>'<div class="fb-feed-item"><b>'+(a[2]?'🏆 ':'🔒 ')+a[0]+'</b><div class="fb-muted">'+a[1]+'</div></div>').join('')}
  claim.onclick=()=>{if(getLocal('fb_daily_claimed','')===day)return;if(typeof getCurrentUser!=='function'||!getCurrentUser()){toast('Log in first to claim FCoins.');if(typeof showPage==='function')showPage('account');return}if(typeof addWalletCoins!=='function'||!addWalletCoins(25)){toast('Could not add FCoins. Try again.');return}saveLocal('fb_daily_claimed',day);xp(50);dailyRender();renderAchievements();toast('Daily reward: +50 XP and +25 FCoins added to your account!')};dailyRender();renderAchievements();
  const search=document.getElementById('fb-game-search'),results=document.getElementById('fb-game-results');
- function gameSearch(){const q=search.value.trim().toLowerCase(),all=FB.games.map(g=>({name:g[0],icon:g[1],kind:g[2]})),seen=new Set(),list=all.filter(g=>{const k=g.name.toLowerCase();if(seen.has(k))return false;seen.add(k);return !q||k.includes(q)||g.kind.toLowerCase().includes(q)});results.innerHTML=list.length?list.map(g=>'<button class="fb-card" style="text-align:left;cursor:pointer" data-found-game="'+g.name.replace(/"/g,'&quot;')+'"><b>'+g.icon+' '+g.name+'</b><div class="fb-muted">'+g.kind+'</div><div class="fb-tag">Open Games to play</div></button>').join(''):'<div class="fb-muted">No matching games. Try “survival”, “racing” or “obby”.</div>';results.querySelectorAll('[data-found-game]').forEach(b=>b.onclick=()=>{if(typeof showPage==='function')showPage('games');toast('Find '+b.dataset.foundGame+' in the Games list')})}
- search.addEventListener('input',gameSearch);gameSearch();
+  const fbGameRoutes={
+   'skyline rush':'dodge','blockfront':'battle','cozy harbor':'blocksandbox','dungeon zero':'zombie',
+   'neon kart':'dodge','pet galaxy':'tycoon','buildverse':'blocksandbox','starfall':'space',
+   'coin rush':'coinrush','sky jumper':'skyjumper','coin clicker':'coinclicker','obby runner':'obby',
+   'dodge racer':'dodge','disaster survival':'disaster','rising lava':'lava','block battle arena':'battle',
+   'mini tycoon':'tycoon','zombie escape':'zombie','space blaster':'space','tower climb':'tower',
+   'treasure rush':'treasure','block sandbox':'blocksandbox'
+  };
+  function gameSearch(){
+    const q=search.value.trim().toLowerCase(),all=FB.games.map(g=>({name:g[0],icon:g[1],kind:g[2]})),seen=new Set();
+    const list=all.filter(g=>{const k=g.name.toLowerCase();if(seen.has(k))return false;seen.add(k);return !q||k.includes(q)||g.kind.toLowerCase().includes(q)});
+    results.innerHTML=list.length?list.map(g=>'<button type="button" class="fb-card" style="text-align:left;cursor:pointer" data-found-game="'+g.name.replace(/"/g,'&quot;')+'"><b>'+g.icon+' '+g.name+'</b><div class="fb-muted">'+g.kind+'</div><div class="fb-tag">▶ Play now</div></button>').join(''):'<div class="fb-muted">No matching games. Try “survival”, “racing” or “obby”.</div>';
+    results.querySelectorAll('[data-found-game]').forEach(b=>b.onclick=()=>{
+      const name=b.dataset.foundGame.toLowerCase().trim(),id=fbGameRoutes[name];
+      if(id&&typeof launchGame==='function'){if(typeof showPage==='function')showPage('games');launchGame(id)}
+      else{if(typeof showPage==='function')showPage('games');toast('That world is not playable yet. Choose a game from the Games page.')}
+    });
+  }
+  search.addEventListener('input',gameSearch);gameSearch();
  const cosmetic=document.getElementById('fb-cosmetic'),equip=document.getElementById('fb-equip-cosmetic'),cosStatus=document.getElementById('fb-cosmetic-status');
  cosmetic.value=getLocal('fb_cosmetic','');function applyCosmetic(v){saveLocal('fb_cosmetic',v);const node=document.getElementById('fb-avatar-accessory');if(node)node.textContent=v;cosmetic.value=v;cosStatus.textContent=v?'Equipped '+v:'Accessory removed'}
  equip.onclick=()=>{applyCosmetic(cosmetic.value);toast(cosmetic.value?'Accessory equipped':'Accessory removed')};
