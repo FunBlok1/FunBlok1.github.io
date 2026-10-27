@@ -675,13 +675,13 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     const stored = key => { try{return localStorage.getItem(key)||''}catch(e){return ''} };
     // FunBlok's public Supabase project settings. Publishable key is designed for browser use.
     const DEFAULT_URL = 'https://yvycanrmtfeophiinbxq.supabase.co';
-    // Use the verified, enabled legacy anon key for Realtime compatibility.
-    const DEFAULT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2eWNhbnJtdGZlb3BoaWluYnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjE4ODEsImV4cCI6MjEwODU5Nzg4MX0.XX5Anys4sL-9c2eMVIuwhcXfyKOG6jTiUIojwAlcul4';
+    // Use the project's publishable key for REST and Realtime across browsers/devices.
+    const DEFAULT_KEY = 'sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu';
     // Old saved credentials can override defaults; replace known stale values with the current project settings.
     const savedUrl = stored('fb_mp_supabase_url');
     const savedKey = stored('fb_mp_supabase_key');
     $(ids.url).value = (!savedUrl || savedUrl.includes('yvycanrmtfeophiinbxq')) ? DEFAULT_URL : savedUrl;
-    $(ids.key).value = (!savedKey || savedKey.startsWith('sb_publishable_') || savedKey === DEFAULT_KEY) ? DEFAULT_KEY : savedKey;
+    $(ids.key).value = (savedUrl.includes('yvycanrmtfeophiinbxq') || !savedUrl) ? DEFAULT_KEY : (savedKey || DEFAULT_KEY);
     $(ids.name).value = stored('fb_mp_name') || stored('fb_username') || 'Player';
     let client=null, channel=null, myId='p'+Math.random().toString(36).slice(2,10), connected=false, activeRoom='';
     let players=new Map(), blocks=[], x=450, y=260, lastSend=0, pendingJoin=false;
@@ -1126,7 +1126,7 @@ const FUNBLOK_API = (location.protocol === "http:" || location.protocol === "htt
   : null;
 // Hosted Supabase shared-state fallback for GitHub Pages.
 const FUNBLOK_DB_URL = "https://yvycanrmtfeophiinbxq.supabase.co";
-const FUNBLOK_DB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2eWNhbnJtdGZlb3BoaWluYnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwMjE4ODEsImV4cCI6MjEwODU5Nzg4OH0.XX5Anys4sL-9c2eMVIuwhcXfyKOG6jTiUIojwAlcul4";
+const FUNBLOK_DB_KEY = "sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu";
 const FUNBLOK_DB = window.supabase ? window.supabase.createClient(FUNBLOK_DB_URL, FUNBLOK_DB_KEY) : null;
 let funblokStateChannel = null;
 let funblokStatePoll = null;
