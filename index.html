@@ -2654,9 +2654,19 @@ function launchGame(id) {
     start();
   } catch (error) {
     console.error("FunBlok could not launch game:", id, error);
-    // If the Three.js CDN is blocked or offline, keep the game playable in a lightweight fallback.
-    if ((id === "skyjumper" || id === "coinrush") && typeof initMegaArcade === "function") {
-      try { initMegaArcade(holder, id); return; } catch (fallbackError) { console.error("FunBlok fallback failed:", fallbackError); }
+    // Any game must remain launchable when WebGL, OrbitControls, or a CDN fails.
+    // Fall back to the lightweight arcade engine for every listed game, not just two.
+    if (typeof initMegaArcade === "function") {
+      try {
+        initMegaArcade(holder, id);
+        const fallbackNote = document.createElement("p");
+        fallbackNote.style.cssText = "font-size:12px;color:#9fb1c9;margin:8px 0";
+        fallbackNote.textContent = "Compatibility mode is active on this device.";
+        holder.appendChild(fallbackNote);
+        return;
+      } catch (fallbackError) {
+        console.error("FunBlok fallback failed:", fallbackError);
+      }
     }
     holder.innerHTML = '<div class="panel-body"><p>This game could not start. Check your connection and try again.</p><button type="button" class="btn btn-outline" onclick="showGameSelector()">Back to games</button></div>';
   }
