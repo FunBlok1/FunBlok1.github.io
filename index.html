@@ -1525,7 +1525,25 @@ const SESSION_KEY = "cb_current_user"; // intentionally local — see note above
 let usersCache = {};
 // Safety copy: keep the last known account list in this browser before any account write.
 const USERS_BACKUP_KEY = "cb_users_safety_backup";
-function loadUsers() { return usersCache; }
+// Recover local account data immediately on startup, even if the cloud is offline.
+// A hard refresh reloads the page; it must not be treated as a request to erase saved data.
+function recoverLocalUsers() {
+  if (usersCache && typeof usersCache === "object" && !Array.isArray(usersCache) && Object.keys(usersCache).length) return usersCache;
+  const candidates = [];
+  try { const v = readSharedCache(USERS_KEY); if (v && typeof v === "object" && !Array.isArray(v)) candidates.push(v); } catch(e) {}
+  try { const raw = localStorage.getItem(USERS_KEY); if (raw) { const v = JSON.parse(raw); if (v && typeof v === "object" && !Array.isArray(v)) candidates.push(v); } } catch(e) {}
+  try { const raw = localStorage.getItem(USERS_BACKUP_KEY); if (raw) { const b = JSON.parse(raw); if (b && b.users && typeof b.users === "object" && !Array.isArray(b.users)) candidates.push(b.users); } } catch(e) {}
+  const recovered = {};
+  // Merge older sources first; preserve all valid account records without deleting any.
+  for (const source of candidates.slice().reverse()) {
+    for (const [key, value] of Object.entries(source)) {
+      if (value && typeof value === "object" && value.username) recovered[key.toLowerCase()] = value;
+    }
+  }
+  if (Object.keys(recovered).length) usersCache = recovered;
+  return usersCache;
+}
+function loadUsers() { return recoverLocalUsers(); }
 function saveUsers(users) {
   if (!users || typeof users !== "object" || Array.isArray(users)) return false;
   const oldUsers = usersCache && typeof usersCache === "object" ? usersCache : {};
