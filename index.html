@@ -1579,7 +1579,6 @@ function loadUsers() { return recoverLocalUsers(); }
 function saveUsers(users) {
   if (!users || typeof users !== "object" || Array.isArray(users)) return false;
   const oldUsers = usersCache && typeof usersCache === "object" ? usersCache : {};
-  // Never replace a populated in-memory account list with an empty object.
   if (Object.keys(users).length === 0 && Object.keys(oldUsers).length > 0) {
     console.error("FunBlok blocked an empty account overwrite to protect existing accounts.");
     return false;
@@ -1587,9 +1586,63 @@ function saveUsers(users) {
   try {
     if (Object.keys(oldUsers).length > 0) localStorage.setItem(USERS_BACKUP_KEY, JSON.stringify({savedAt:new Date().toISOString(),users:oldUsers}));
   } catch (e) { console.warn("Could not save local account safety copy:", e); }
+
+  // Work out which accounts this action actually changed. Merge those changes
+  // onto the latest cloud directory instead of uploading a stale whole-device
+  // snapshot that can erase accounts created on another browser/device.
+  const changed = new Set();
+  const removed = new Set();
+  for (const [key, value] of Object.entries(users)) {
+    const normalized = key.toLowerCase();
+    if (!oldUsers[normalized] || JSON.stringify(oldUsers[normalized]) !== JSON.stringify(value)) changed.add(normalized);
+  }
+  for (const key of Object.keys(oldUsers)) if (!Object.prototype.hasOwnProperty.call(users, key)) removed.add(key.toLowerCase());
+
   usersCache = users;
-  cloudSet(USERS_KEY, users, true);
+  try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch(e) {}
+  writeSharedCache(USERS_KEY, users);
+  persistMergedUsers(changed, removed, users);
   return true;
+}
+
+async function persistMergedUsers(changedKeys, removedKeys, localSnapshot) {
+  const merged = {};
+  try {
+    if (!hasSharedServer && FUNBLOK_DB) {
+      const {data,error} = await FUNBLOK_DB.from("funblok_shared_state").select("value").eq("key",USERS_KEY).maybeSingle();
+      if (error) throw error;
+      const remote = data && data.value && typeof data.value === "object" && !Array.isArray(data.value) ? data.value : {};
+      Object.assign(merged, remote);
+    } else if (hasSharedServer) {
+      const response = await fetch(FUNBLOK_API + "/state/" + encodeURIComponent(USERS_KEY), {cache:"no-store",credentials:"same-origin"});
+      if (response.ok) {
+        const data = await response.json();
+        if (data.value && typeof data.value === "object" && !Array.isArray(data.value)) Object.assign(merged,data.value);
+      }
+    }
+  } catch(e) {
+    console.warn("FunBlok could not fetch latest cloud accounts before merging; keeping local records safe.",e);
+  }
+  // Retain cloud accounts, then apply only this device's explicit edits.
+  if (Object.keys(merged).length === 0) Object.assign(merged, localSnapshot || {});
+  for (const key of removedKeys) delete merged[key];
+  for (const key of changedKeys) {
+    const record = localSnapshot[key];
+    if (record && typeof record === "object" && record.username) merged[key] = record;
+  }
+  // Never send an empty or invalid directory to the cloud.
+  if (Object.keys(merged).length === 0 && Object.keys(usersCache || {}).length > 0) return;
+  usersCache = merged;
+  try { localStorage.setItem(USERS_KEY,JSON.stringify(merged)); } catch(e) {}
+  writeSharedCache(USERS_KEY,merged);
+  const saved = await cloudSet(USERS_KEY,merged,true);
+  if (saved) {
+    renderPlayers();
+    renderAdminTable();
+    renderCoownerTable();
+    renderOwnerTable();
+    renderNovaPlayerManager();
+  }
 }
 
 function getCurrentUsername() { return localStorage.getItem(SESSION_KEY); }
