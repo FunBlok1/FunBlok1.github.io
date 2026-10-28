@@ -2632,7 +2632,7 @@ function deleteUser(username, panel) {
    GAME GRIDS
    ========================================================= */
 const gamesList = [
-  { id: "blocksandbox", name: "Block Sandbox", plays: "Build mode", color: "#4caf50", kind: "studio" },
+  { id: "blocksandbox", name: "Block Sandbox 3D", plays: "3D Sandbox", color: "#4caf50", kind: "arcade" },
   { id: "coinrush", name: "Coin Rush", plays: "3D Endless", color: "#f1c40f", kind: "arcade" },
   { id: "skyjumper", name: "Sky Jumper", plays: "3D Runner", color: "#16a085", kind: "arcade" },
   { id: "coinclicker", name: "Coin Clicker", plays: "Simulator", color: "#b7791f", kind: "arcade" },
@@ -2659,7 +2659,8 @@ function gameCardSubtext(g) {
 function renderGameGrid(elId, clickable) {
   const grid = document.getElementById(elId);
   if (!grid) return;
-  grid.innerHTML = gamesList.map(g => `
+  const orderedGames = gamesList.slice().sort((a,b) => (a.kind === "studio") - (b.kind === "studio"));
+  grid.innerHTML = orderedGames.map(g => `
     <button type="button" class="gamecard" data-fb-game-id="${g.id}" ${clickable ? "" : "disabled"} aria-label="Open ${g.name}" style="text-align:left;width:100%;font:inherit;color:inherit;border:0;cursor:${clickable ? "pointer" : "default"}">
       <div class="thumb" style="background:${g.color};">${g.name.charAt(0)}</div>
       <div class="info">
@@ -2751,6 +2752,7 @@ function stopCurrentArcadeGame() {
 function initThreeDWorldGame(holder, id) {
  const game = gamesList.find(g => g.id === id);
  const themes = {
+  blocksandbox:{sky:0x87ceeb,ground:0x4caf50,accent:0xffd34f,label:"Block Sandbox"},
   coinclicker:{sky:0x182a45,ground:0x315d4a,accent:0xffd34f,label:"Coin Fields"},
   obby:{sky:0x17233d,ground:0x3d385e,accent:0xff78d1,label:"Sky Obby"},
   dodge:{sky:0x271c2b,ground:0x633d43,accent:0xff604f,label:"Neon Circuit"},
@@ -2858,6 +2860,7 @@ function initThreeDWorldGame(holder, id) {
 /* FUNBLOK MEGA ARCADE: eight playable mini-worlds */
 function initMegaArcade(holder,id){
  const config={
+ blocksandbox:{title:"BLOCK SANDBOX",sub:"Explore a block-built world, collect blocks, and build your own little island.",goal:"Explore and build",bg:"#17364a"},
  skyjumper:{title:"SKY JUMPER",sub:"Jump across floating platforms and collect energy orbs.",goal:"Collect as many orbs as you can",bg:"#142b43"},
  coinrush:{title:"COIN RUSH",sub:"Run through the course and collect coins.",goal:"Collect coins before time runs out",bg:"#142b43"},
  disaster:{title:"DISASTER SURVIVAL",sub:"Watch the warnings. Move fast. Stay alive.",goal:"Survive for 45 seconds",bg:"#18243a"},
@@ -5146,7 +5149,7 @@ function renderWorldIdeaGenerator(){const ideas=makeWorldIdeas();const search=do
 
 function renderGames(){
  const e=document.getElementById('fb-games');if(!e)return;
- const allGames=(Array.isArray(gamesList)?gamesList:[]).filter(g=>g&&g.id&&g.name);
+ const allGames=(Array.isArray(gamesList)?gamesList:[]).filter(g=>g&&g.id&&g.name).sort((a,b)=>(a.kind==="studio")-(b.kind==="studio"));
  e.innerHTML=allGames.map(g=>{
   const icons={blocksandbox:'🧱',coinrush:'🪙',skyjumper:'☁️',coinclicker:'🖱️',obby:'🏃',dodge:'🏎️',disaster:'🌪️',lava:'🌋',battle:'🛡️',tycoon:'🏗️',zombie:'🧟',space:'🚀',tower:'🗼',treasure:'💎'};
   return `<button type="button" class="fb-card fb-game" data-game-id="${esc(g.id)}" aria-label="Play ${esc(g.name)}"><div class="fb-game-art">${icons[g.id]||'🎮'}</div><div class="fb-game-body"><div class="fb-game-name">${esc(g.name)}</div><span class="fb-online">● Ready to play</span><div class="fb-tags"><span class="fb-tag">${esc(g.plays||'Game')}</span><span class="fb-tag">FunBlok</span></div><span class="fb-game-action">▶ Play now</span></div></button>`;
