@@ -2706,6 +2706,10 @@ function launchGame(id) {
   stagePanel.style.display = "block";
   title.textContent = game.name;
 
+  // Move the game into view automatically so players don't have to scroll to find it.
+  stagePanel.style.scrollMarginTop = "88px";
+  requestAnimationFrame(() => stagePanel.scrollIntoView({ behavior: "smooth", block: "start" }));
+
   stopCurrentArcadeGame();
   holder.innerHTML = "";
   try {
