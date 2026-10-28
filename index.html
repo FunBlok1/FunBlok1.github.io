@@ -683,7 +683,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     // FunBlok's public Supabase project settings. Publishable key is designed for browser use.
     const DEFAULT_URL = 'https://yvycanrmtfeophiinbxq.supabase.co';
     // Use the project's publishable key for REST and Realtime across browsers/devices.
-    const DEFAULT_KEY = 'sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu';
+    const DEFAULT_KEY = 'sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu';
     // Old saved credentials can override defaults; replace known stale values with the current project settings.
     const savedUrl = stored('fb_mp_supabase_url');
     const savedKey = stored('fb_mp_supabase_key');
@@ -1133,7 +1133,7 @@ const FUNBLOK_API = (location.protocol === "http:" || location.protocol === "htt
   : null;
 // Hosted Supabase shared-state fallback for GitHub Pages.
 const FUNBLOK_DB_URL = "https://yvycanrmtfeophiinbxq.supabase.co";
-const FUNBLOK_DB_KEY = "sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu";
+const FUNBLOK_DB_KEY = "sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu";
 const FUNBLOK_DB = window.supabase ? window.supabase.createClient(FUNBLOK_DB_URL, FUNBLOK_DB_KEY) : null;
 let funblokStateChannel = null;
 let funblokStatePoll = null;
@@ -5305,7 +5305,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <script id="fb-live-chat-js">
 (function(){
  const url='https://yvycanrmtfeophiinbxq.supabase.co';
- const key='sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu';
+ const key='sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu';
  const $=id=>document.getElementById(id), box=$('fb-chat-messages');
  if(!box||box.dataset.ready)return; box.dataset.ready='1';
  const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
@@ -5326,7 +5326,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  const API=(typeof window.FUNBLOK_API_URL==='string'&&window.FUNBLOK_API_URL.trim())?window.FUNBLOK_API_URL.trim().replace(/\/+$/,''):null;
  const $=id=>document.getElementById(id);
  const esc=s=>{const d=document.createElement('div');d.textContent=s??'';return d.innerHTML};
- const DB=window.supabase?window.supabase.createClient('https://yvycanrmtfeophiinbxq.supabase.co','sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu'):null;
+ const DB=window.supabase?window.supabase.createClient('https://yvycanrmtfeophiinbxq.supabase.co','sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu'):null;
  async function getState(key, fallback){
    if(API){try{const r=await fetch(API+'/state/'+encodeURIComponent(key),{cache:'no-store'});if(r.ok){const d=await r.json();return d.value??fallback}}catch{}}
    if(DB){try{const {data,error}=await DB.from('funblok_shared_state').select('value').eq('key',key).maybeSingle();if(!error)return data?data.value:fallback}catch(e){console.warn('Storm shared read failed',e)}}
@@ -5442,7 +5442,7 @@ body.future-theme *{box-sizing:border-box} body.future-theme input,body.future-t
   host.addEventListener('wheel',e=>{orbit.dist=Math.max(5,Math.min(28,orbit.dist+e.deltaY*.015));e.preventDefault()},{passive:false});
   window.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(document.activeElement.tagName))return;keys[e.key.toLowerCase()]=true;if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase()))e.preventDefault()});
   window.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-  $('fb3-join').onclick=async()=>{if(!window.supabase){status('Online connection library unavailable. Refresh the page.');return}try{if(channel)await client.removeChannel(channel);const room=roomName();if(!room){status('Enter a room code.');return}client=window.supabase.createClient('https://yvycanrmtfeophiinbxq.supabase.co','sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ-G-LIbgPu',{realtime:{params:{eventsPerSecond:15}}});channel=client.channel('funblok-3d-'+room,{config:{broadcast:{self:false}}});channel.on('broadcast',{event:'player'},({payload})=>{if(payload&&payload.id!==pid)remotePlayer(payload)});channel.on('broadcast',{event:'block'},({payload})=>{if(payload&&payload.id)blockMesh(payload)});channel.on('broadcast',{event:'delete'},({payload})=>{if(payload&&payload.id){const m=scene.getObjectByName(payload.id);if(m){scene.remove(m);m.geometry.dispose();m.material.dispose()}blocks=blocks.filter(b=>b.id!==payload.id)}});channel.on('broadcast',{event:'sync-request'},()=>send('sync',{blocks}));channel.on('broadcast',{event:'sync'},({payload})=>{(payload?.blocks||[]).forEach(blockMesh)});channel.subscribe(st=>{if(st==='SUBSCRIBED'){connected=true;status('Connected to 3D room '+room+' — share this code with friends.');send('sync-request',{id:pid});sendPos()}else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(st)){connected=false;status('Connection lost ('+st+'). Try joining again.')}})}catch(e){status('Could not join: '+(e.message||'connection error'))}};
+  $('fb3-join').onclick=async()=>{if(!window.supabase){status('Online connection library unavailable. Refresh the page.');return}try{if(channel)await client.removeChannel(channel);const room=roomName();if(!room){status('Enter a room code.');return}client=window.supabase.createClient('https://yvycanrmtfeophiinbxq.supabase.co','sb_publishable_BlkaKfEKGfvXHdY1nvDCpQ_G-LIbgPu',{realtime:{params:{eventsPerSecond:15}}});channel=client.channel('funblok-3d-'+room,{config:{broadcast:{self:false}}});channel.on('broadcast',{event:'player'},({payload})=>{if(payload&&payload.id!==pid)remotePlayer(payload)});channel.on('broadcast',{event:'block'},({payload})=>{if(payload&&payload.id)blockMesh(payload)});channel.on('broadcast',{event:'delete'},({payload})=>{if(payload&&payload.id){const m=scene.getObjectByName(payload.id);if(m){scene.remove(m);m.geometry.dispose();m.material.dispose()}blocks=blocks.filter(b=>b.id!==payload.id)}});channel.on('broadcast',{event:'sync-request'},()=>send('sync',{blocks}));channel.on('broadcast',{event:'sync'},({payload})=>{(payload?.blocks||[]).forEach(blockMesh)});channel.subscribe(st=>{if(st==='SUBSCRIBED'){connected=true;status('Connected to 3D room '+room+' — share this code with friends.');send('sync-request',{id:pid});sendPos()}else if(['CHANNEL_ERROR','TIMED_OUT','CLOSED'].includes(st)){connected=false;status('Connection lost ('+st+'). Try joining again.')}})}catch(e){status('Could not join: '+(e.message||'connection error'))}};
   $('fb3-leave').onclick=async()=>{if(channel)try{await client.removeChannel(channel)}catch{}channel=null;connected=false;status('You left the 3D room.')};
   $('fb3-block').onclick=()=>{const b={id:pid+'_b'+(++blockSeq),x:Math.round(me.position.x+Math.sin(orbit.yaw)*2),z:Math.round(me.position.z+Math.cos(orbit.yaw)*2),color:[0xffbf5c,0x46d9ff,0x9bff75,0xff6b8a,0xb7a0ff][Math.floor(Math.random()*5)],owner:pid};blockMesh(b);send('block',b);send('sync',{blocks})};
   $('fb3-delete').onclick=()=>{const b=[...blocks].reverse().find(x=>x.owner===pid);if(!b){status('No block of yours to undo.');return}const m=scene.getObjectByName(b.id);if(m){scene.remove(m);m.geometry.dispose();m.material.dispose()}blocks=blocks.filter(x=>x.id!==b.id);send('delete',{id:b.id})};
