@@ -1459,6 +1459,8 @@ function renderOnlinePresence() {
 }
 function startPresence() {
   const me = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+  // Keep the optional API heartbeat, but do not return early: the Supabase
+  // Presence channel below is what broadcasts the shared online list cross-device.
   if (hasSharedServer) {
     const send = () => {
       const current = typeof getCurrentUser === "function" ? getCurrentUser() : null;
@@ -1471,7 +1473,6 @@ function startPresence() {
     send();
     clearInterval(window.funblokPresenceTimer);
     window.funblokPresenceTimer = setInterval(send, 15000);
-    return;
   }
   if (!FUNBLOK_DB) {
     console.warn("FunBlok online presence unavailable: Realtime client did not load.");
@@ -2324,6 +2325,20 @@ let activeAvatarPreviewStop = null;
 function mountAvatarPreview(container, colors, w, h) {
   if (activeAvatarPreviewStop) { activeAvatarPreviewStop(); activeAvatarPreviewStop = null; }
   container.innerHTML = "";
+  // Keep avatar/profile screens usable when WebGL or the Three.js CDN is blocked.
+  if (!window.THREE || !THREE.WebGLRenderer) {
+    const c = colors || defaultAvatarColors();
+    container.innerHTML = `<div style="height:100%;min-height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(#dbe9f7,#a9c7e5)">
+      <div style="position:relative;width:116px;height:190px">
+        <div style="position:absolute;left:37px;top:4px;width:42px;height:42px;background:${c.head||'#f1c27d'};border:2px solid #26384b;border-radius:4px">
+          <span style="position:absolute;left:8px;top:14px;width:5px;height:5px;background:#202533;border-radius:50%"></span><span style="position:absolute;right:8px;top:14px;width:5px;height:5px;background:#202533;border-radius:50%"></span><span style="position:absolute;left:13px;top:27px;width:13px;height:3px;background:#8b4938"></span>
+        </div>
+        <div style="position:absolute;left:25px;top:49px;width:66px;height:58px;background:${c.torso||'#00559e'};border:2px solid #26384b;border-radius:3px"></div>
+        <div style="position:absolute;left:4px;top:51px;width:18px;height:58px;background:${c.arms||c.head||'#f1c27d'};border:2px solid #26384b;border-radius:3px"></div><div style="position:absolute;right:4px;top:51px;width:18px;height:58px;background:${c.arms||c.head||'#f1c27d'};border:2px solid #26384b;border-radius:3px"></div>
+        <div style="position:absolute;left:29px;top:109px;width:25px;height:67px;background:${c.legs||'#2c3e50'};border:2px solid #26384b;border-radius:3px"></div><div style="position:absolute;right:29px;top:109px;width:25px;height:67px;background:${c.legs||'#2c3e50'};border:2px solid #26384b;border-radius:3px"></div>
+      </div></div>`;
+    return {group:null,updateColors:(next)=>mountAvatarPreview(container,next,w,h)};
+  }
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xdbe9f7);
   const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
