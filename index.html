@@ -4063,25 +4063,40 @@ function buildChainMesh(chainId) {
 
 function buildAvatarMesh(data) {
   const group = new THREE.Group();
-  const mk = (w, h, d, color, x, y, shape) => {
+  const mk = (w, h, d, color, x, y, shape, z=0) => {
     const geo = shape === "cone" ? new THREE.ConeGeometry(w, h, 16)
       : shape === "cylinder" ? new THREE.CylinderGeometry(w, w, h, 16)
+      : shape === "sphere" ? new THREE.SphereGeometry(w, 16, 12)
       : new THREE.BoxGeometry(w, h, d);
-    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color }));
-    mesh.position.set(x, y, 0);
+    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: .72 }));
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
     return mesh;
   };
 
+  // Classic block proportions with a complete, readable face and small 3D details.
   const torso = mk(0.9, 1.1, 0.5, data.torso, 0, 1.15); group.add(torso);
+  const neck = mk(.14, .18, .14, data.head, 0, 1.78); group.add(neck);
   const head = mk(0.65, 0.65, 0.65, data.head, 0, 2.05); group.add(head);
+  const eyeL = mk(.055, .055, .055, "#202533", -.16, 2.12, "sphere", .335); group.add(eyeL);
+  const eyeR = mk(.055, .055, .055, "#202533", .16, 2.12, "sphere", .335); group.add(eyeR);
+  const glintL = mk(.018, .018, .018, "#ffffff", -.176, 2.14, "sphere", .38); group.add(glintL);
+  const glintR = mk(.018, .018, .018, "#ffffff", .144, 2.14, "sphere", .38); group.add(glintR);
+  const smile = mk(.15, .025, .025, "#8b4938", 0, 1.96, "box", .342); group.add(smile);
   const armL = mk(0.3, 1.0, 0.3, data.arms, -0.62, 1.15); group.add(armL);
   const armR = mk(0.3, 1.0, 0.3, data.arms, 0.62, 1.15); group.add(armR);
+  const handL = mk(.13, .13, .13, data.head, -.62, .61, "sphere"); group.add(handL);
+  const handR = mk(.13, .13, .13, data.head, .62, .61, "sphere"); group.add(handR);
   const legL = mk(0.35, 1.0, 0.35, data.legs, -0.25, 0.1); group.add(legL);
   const legR = mk(0.35, 1.0, 0.35, data.legs, 0.25, 0.1); group.add(legR);
+  const shoeL = mk(.37, .18, .48, "#242b3a", -.25, -.43, "box", .035); group.add(shoeL);
+  const shoeR = mk(.37, .18, .48, "#242b3a", .25, -.43, "box", .035); group.add(shoeR);
+  const shoulderL = mk(.18, .18, .18, data.arms, -.62, 1.65, "sphere"); group.add(shoulderL);
+  const shoulderR = mk(.18, .18, .18, data.arms, .62, 1.65, "sphere"); group.add(shoulderR);
 
   const hat = buildHatMesh(data.hat || "none", mk);
   if (hat) group.add(hat);
-
   const chain = buildChainMesh(data.chain || "none");
   if (chain) group.add(chain);
 
