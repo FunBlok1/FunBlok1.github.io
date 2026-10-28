@@ -529,6 +529,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     <a data-page="home" class="active">Home</a>
     <a data-page="studio">Studio</a>
     <a data-page="games">Games</a>
+    <a data-page="school">School</a>
     <a data-page="account">Account</a>
     <a data-page="catalog">Catalog</a>
     <a data-page="forums">Forums</a>
@@ -866,6 +867,52 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     <div class="panel-body">
       <button type="button" class="btn btn-outline btn-small" id="game-back-btn">&larr; Back to games</button>
       <div id="game-stage-holder" style="margin-top:10px;"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- SCHOOL: MATHS + TYPING -->
+<div class="page" id="page-school">
+  <style>
+    #school-page{max-width:1050px;margin:0 auto}
+    #school-page .school-hero{background:linear-gradient(120deg,#164e63,#2563eb);color:#fff;border-radius:12px;padding:22px;margin-bottom:16px}
+    #school-page .school-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    #school-page .school-card{background:var(--panel-bg,#fff);border:1px solid #d5dde7;border-radius:10px;padding:18px;min-width:0}
+    #school-page button{cursor:pointer;border:0;border-radius:7px;padding:9px 13px;background:#1769aa;color:#fff;font-weight:bold}
+    #school-page input,#school-page select{padding:10px;border:1px solid #9caaba;border-radius:7px;max-width:100%;font-size:16px}
+    #school-page .school-question{font-size:30px;font-weight:800;margin:16px 0}
+    #school-page .school-result{min-height:24px;font-weight:bold;margin-top:10px}
+    #school-page .school-muted{color:#64748b;font-size:13px}
+    #school-page .typing-prompt{font-size:18px;line-height:1.7;background:#f1f5f9;color:#182235;padding:14px;border-radius:8px;margin:12px 0}
+    #school-page textarea{width:100%;min-height:110px;padding:12px;border:1px solid #9caaba;border-radius:8px;font:16px/1.5 monospace}
+    @media(max-width:700px){#school-page .school-grid{grid-template-columns:1fr}}
+    body.future-theme #school-page .school-card{background:#111e30;color:#e7f2ff;border-color:#2c4767}
+    body.future-theme #school-page .typing-prompt{background:#17263a;color:#e7f2ff}
+  </style>
+  <div id="school-page">
+    <div class="school-hero"><div style="font-size:12px;letter-spacing:2px;font-weight:bold">FUNBLOK LEARNING</div><h1 style="margin:8px 0">School Zone 📚</h1><p style="margin:0">Practise maths, build typing speed, and improve a little every round.</p></div>
+    <div class="school-grid">
+      <section class="school-card" aria-labelledby="school-maths-title">
+        <h2 id="school-maths-title">➗ Maths practice</h2>
+        <p class="school-muted">Choose a level, solve the question, and keep your score going.</p>
+        <label for="school-maths-level">Difficulty </label>
+        <select id="school-maths-level"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
+        <div class="school-question" id="school-maths-question" aria-live="polite">Ready?</div>
+        <form id="school-maths-form"><label for="school-maths-answer">Your answer</label><br><input id="school-maths-answer" inputmode="numeric" autocomplete="off" required><button type="submit">Check</button></form>
+        <div class="school-result" id="school-maths-result" aria-live="polite"></div>
+        <p>Score: <strong id="school-maths-score">0</strong> · Streak: <strong id="school-maths-streak">0</strong></p>
+        <button type="button" id="school-maths-next">New question</button>
+      </section>
+      <section class="school-card" aria-labelledby="school-typing-title">
+        <h2 id="school-typing-title">⌨️ Typing trainer</h2>
+        <p class="school-muted">Type the sentence below as accurately and quickly as you can.</p>
+        <div class="typing-prompt" id="school-typing-prompt">Small steps make big progress.</div>
+        <textarea id="school-typing-input" placeholder="Start typing here…" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+        <div class="school-result" id="school-typing-result" aria-live="polite">Start typing to begin.</div>
+        <p>Time: <strong id="school-typing-time">0s</strong> · Accuracy: <strong id="school-typing-accuracy">100%</strong></p>
+        <button type="button" id="school-typing-new">New sentence</button>
+      </section>
     </div>
   </div>
 </div>
@@ -6073,6 +6120,91 @@ body:not(.future-theme) input, body:not(.future-theme) textarea, body:not(.futur
 }
 
 </style>
+
+<script>
+/* FUNBLOK SCHOOL ZONE SCRIPT */
+(function(){
+  const prompts = [
+    "Small steps make big progress.",
+    "Practice helps your skills grow.",
+    "Curious minds ask great questions.",
+    "Build a world and share your ideas.",
+    "Read carefully and check your work.",
+    "Learning can be fun every day."
+  ];
+  let answer = 0, score = 0, streak = 0, startedAt = 0, timerId = null;
+  function byId(id){return document.getElementById(id)}
+  function question(){
+    const level = byId("school-maths-level"); if(!level) return;
+    const mode = level.value;
+    let a,b,op;
+    if(mode==="easy"){a=1+Math.floor(Math.random()*20);b=1+Math.floor(Math.random()*20);op=Math.random()<.5?"+":"-";}
+    else if(mode==="medium"){a=2+Math.floor(Math.random()*12);b=2+Math.floor(Math.random()*12);op=Math.random()<.5?"×":"+";}
+    else {a=5+Math.floor(Math.random()*45);b=2+Math.floor(Math.random()*20);op=["×","-","+"][Math.floor(Math.random()*3)];}
+    if(op==="-" && b>a){const t=a;a=b;b=t;}
+    answer=op==="+"?a+b:op==="-"?a-b:a*b;
+    byId("school-maths-question").textContent=a+" "+op+" "+b+" = ?";
+    byId("school-maths-answer").value="";
+    byId("school-maths-result").textContent="";
+    byId("school-maths-answer").focus();
+  }
+  function newTyping(){
+    const old=byId("school-typing-prompt")?.textContent;
+    let options=prompts.filter(p=>p!==old); if(!options.length)options=prompts;
+    byId("school-typing-prompt").textContent=options[Math.floor(Math.random()*options.length)];
+    byId("school-typing-input").value="";
+    byId("school-typing-result").textContent="Start typing to begin.";
+    byId("school-typing-time").textContent="0s";
+    byId("school-typing-accuracy").textContent="100%";
+    startedAt=0;
+    if(timerId){clearInterval(timerId);timerId=null;}
+    byId("school-typing-input").focus();
+  }
+  function init(){
+    if(!byId("page-school") || byId("page-school").dataset.ready==="1")return;
+    byId("page-school").dataset.ready="1";
+    byId("school-maths-form").addEventListener("submit",function(e){
+      e.preventDefault();
+      const raw=byId("school-maths-answer").value.trim();
+      const result=byId("school-maths-result");
+      if(raw!=="" && Number(raw)===answer){score++;streak++;result.textContent="Correct! Nice work 🎉";result.style.color="#16803c";}
+      else{streak=0;result.textContent="Not quite — the answer is "+answer+". Try the next one!";result.style.color="#c0392b";}
+      byId("school-maths-score").textContent=score;
+      byId("school-maths-streak").textContent=streak;
+    });
+    byId("school-maths-next").addEventListener("click",question);
+    byId("school-maths-level").addEventListener("change",question);
+    byId("school-typing-new").addEventListener("click",newTyping);
+    byId("school-typing-input").addEventListener("input",function(){
+      const typed=this.value, target=byId("school-typing-prompt").textContent;
+      if(typed.length && !startedAt){
+        startedAt=Date.now();
+        timerId=setInterval(()=>{if(startedAt)byId("school-typing-time").textContent=Math.floor((Date.now()-startedAt)/1000)+"s";},250);
+      }
+      let correct=0;for(let i=0;i<Math.min(typed.length,target.length);i++)if(typed[i]===target[i])correct++;
+      const accuracy=typed.length?Math.round(correct/typed.length*100):100;
+      byId("school-typing-accuracy").textContent=accuracy+"%";
+      const elapsed=startedAt?Math.max(1,(Date.now()-startedAt)/60000):0;
+      const wpm=elapsed?Math.round((typed.trim().split(/\s+/).filter(Boolean).length)/elapsed):0;
+      const result=byId("school-typing-result");
+      if(typed===target){
+        const seconds=Math.max(1,Math.round((Date.now()-startedAt)/1000));
+        result.textContent="Completed in "+seconds+"s · "+wpm+" WPM · "+accuracy+"% accuracy!";
+        result.style.color="#16803c";startedAt=0;if(timerId){clearInterval(timerId);timerId=null;}
+      }else{
+        result.textContent=typed===target.slice(0,typed.length)?"Keep going — perfect so far!":"Check the highlighted-by-position text and correct any mistakes.";
+        result.style.color=typed===target.slice(0,typed.length)?"#1769aa":"#b45309";
+      }
+    });
+    question();newTyping();
+  }
+  document.addEventListener("DOMContentLoaded",init);
+  const oldShowPage=window.showPage;
+  if(typeof oldShowPage==="function")window.showPage=function(name){oldShowPage.apply(this,arguments);if(name==="school")init();};
+  setTimeout(init,100);
+})();
+</script>
+
 </body>
 </html>
 
