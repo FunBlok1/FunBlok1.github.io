@@ -4030,6 +4030,11 @@ const avatarPalette = [
   { id: "#b7791f", name: "Gold", color: "#b7791f", cost: 25 },
   { id: "#16a085", name: "Teal", color: "#16a085", cost: 25 },
   { id: "#ff2fb0", name: "Neon Pink", color: "#ff2fb0", cost: 40 },
+  { id: "#ffd700", name: "LEGENDARY GOLD", color: "#ffd700", cost: 250 },
+  { id: "#a855f7", name: "VOID GALAXY", color: "#a855f7", cost: 350 },
+  { id: "#00e5ff", name: "PLASMA CORE", color: "#00e5ff", cost: 350 },
+  { id: "#ff3b20", name: "INFERNO", color: "#ff3b20", cost: 450 },
+  { id: "#e8f1ff", name: "CELESTIAL", color: "#e8f1ff", cost: 500 },
 ];
 
 // Hats — structural extras, not just colors
@@ -4187,7 +4192,13 @@ function buildAvatarMesh(data) {
       : shape === "cylinder" ? new THREE.CylinderGeometry(w, w, h, 16)
       : shape === "sphere" ? new THREE.SphereGeometry(w, 16, 12)
       : new THREE.BoxGeometry(w, h, d);
-    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: .72 }));
+    const legendary = ["#ffd700", "#a855f7", "#00e5ff", "#ff3b20", "#e8f1ff"].includes(String(color).toLowerCase());
+    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+      color, roughness: legendary ? .24 : .72,
+      metalness: legendary ? .58 : 0,
+      emissive: legendary ? color : 0,
+      emissiveIntensity: legendary ? .42 : 0
+    }));
     mesh.position.set(x, y, z);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
