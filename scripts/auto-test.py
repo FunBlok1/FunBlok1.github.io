@@ -62,6 +62,9 @@ def main():
     duplicates = sorted({item for item in scan.ids if scan.ids.count(item) > 1})
     check(not duplicates, "No duplicate HTML IDs", ", ".join(duplicates[:12]))
 
+    check('id="page-school"' not in html and 'data-page="school"' not in html,
+          "School section removed from the gaming platform")
+
     required_ids = [
         "header", "navlinks", "page-home", "page-games", "page-studio",
         "gamegrid", "gamegrid2", "studio-wrap", "authbox",
