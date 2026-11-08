@@ -1,22 +1,37 @@
-name: Check FunBlok inline JavaScript
+name: FunBlok automatic tester
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: "17 */6 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  syntax:
+  auto-test:
+    name: Run FunBlok checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Get latest FunBlok code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-      - uses: actions/setup-python@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.x"
-      - name: Check inline JavaScript syntax
+
+      - name: Run automatic FunBlok tester
+        run: python scripts/auto-test.py
+
+      - name: Run detailed inline JavaScript check
         run: python scripts/check-inline-js.py
