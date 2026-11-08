@@ -529,7 +529,6 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
     <a data-page="home" class="active">Home</a>
     <a data-page="studio">Studio</a>
     <a data-page="games">Games</a>
-    <a data-page="school">School</a>
     <a data-page="account">Account</a>
     <a data-page="catalog">Catalog</a>
     <a data-page="forums">Forums</a>
@@ -873,51 +872,6 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
 
 
 <!-- SCHOOL: MATHS + TYPING -->
-<div class="page" id="page-school">
-  <style>
-    #school-page{max-width:1050px;margin:0 auto}
-    #school-page .school-hero{background:linear-gradient(120deg,#164e63,#2563eb);color:#fff;border-radius:12px;padding:22px;margin-bottom:16px}
-    #school-page .school-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-    #school-page .school-card{background:var(--panel-bg,#fff);border:1px solid #d5dde7;border-radius:10px;padding:18px;min-width:0}
-    #school-page button{cursor:pointer;border:0;border-radius:7px;padding:9px 13px;background:#1769aa;color:#fff;font-weight:bold}
-    #school-page input,#school-page select{padding:10px;border:1px solid #9caaba;border-radius:7px;max-width:100%;font-size:16px}
-    #school-page .school-question{font-size:30px;font-weight:800;margin:16px 0}
-    #school-page .school-result{min-height:24px;font-weight:bold;margin-top:10px}
-    #school-page .school-muted{color:#64748b;font-size:13px}
-    #school-page .typing-prompt{font-size:18px;line-height:1.7;background:#f1f5f9;color:#182235;padding:14px;border-radius:8px;margin:12px 0}
-    #school-page textarea{width:100%;min-height:110px;padding:12px;border:1px solid #9caaba;border-radius:8px;font:16px/1.5 monospace}
-    @media(max-width:700px){#school-page .school-grid{grid-template-columns:1fr}}
-    body.future-theme #school-page .school-card{background:#111e30;color:#e7f2ff;border-color:#2c4767}
-    body.future-theme #school-page .typing-prompt{background:#17263a;color:#e7f2ff}
-  </style>
-  <div id="school-page">
-    <div class="school-hero"><div style="font-size:12px;letter-spacing:2px;font-weight:bold">FUNBLOK LEARNING</div><h1 style="margin:8px 0">School Zone 📚</h1><p style="margin:0">Practise maths, build typing speed, and improve a little every round.</p></div>
-    <div class="school-grid">
-      <section class="school-card" aria-labelledby="school-maths-title">
-        <h2 id="school-maths-title">➗ Maths practice</h2>
-        <p class="school-muted">Choose a level, solve the question, and keep your score going.</p>
-        <label for="school-maths-level">Difficulty </label>
-        <select id="school-maths-level"><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
-        <div class="school-question" id="school-maths-question" aria-live="polite">Ready?</div>
-        <form id="school-maths-form"><label for="school-maths-answer">Your answer</label><br><input id="school-maths-answer" inputmode="numeric" autocomplete="off" required><button type="submit">Check</button></form>
-        <div class="school-result" id="school-maths-result" aria-live="polite"></div>
-        <p>Score: <strong id="school-maths-score">0</strong> · Streak: <strong id="school-maths-streak">0</strong></p>
-        <button type="button" id="school-maths-next">New question</button>
-      </section>
-      <section class="school-card" aria-labelledby="school-typing-title">
-        <h2 id="school-typing-title">⌨️ Typing trainer</h2>
-        <p class="school-muted">Type the sentence below as accurately and quickly as you can.</p>
-        <div class="typing-prompt" id="school-typing-prompt">Small steps make big progress.</div>
-        <textarea id="school-typing-input" placeholder="Start typing here…" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
-        <div class="school-result" id="school-typing-result" aria-live="polite">Start typing to begin.</div>
-        <p>Time: <strong id="school-typing-time">0s</strong> · Accuracy: <strong id="school-typing-accuracy">100%</strong></p>
-        <button type="button" id="school-typing-new">New sentence</button>
-      </section>
-    </div>
-  </div>
-</div>
-
-<!-- ACCOUNT -->
 <div class="page" id="page-account">
   <div class="panel" id="auth-panel">
     <div class="panel-title">Log In</div>
