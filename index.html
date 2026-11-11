@@ -763,6 +763,34 @@ body:not(.future-theme) #footer :is(a,p,span,small) { color: inherit; }
 #page-owner .nova-stat b { color:#fff !important; }
 </style>
 
+
+<style id="funblok-home-visibility-fix">
+/* Keep the Home destination and its content visible in the classic layout. */
+#navlinks a[data-page="home"] {
+  display:inline-flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  color:#fff !important;
+}
+#page-home.active {
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+#page-home.active > * {
+  visibility:visible;
+}
+body:not(.future-theme) #page-home :is(h1,h2,h3,h4,p,span,small,label,li) {
+  opacity:1;
+}
+body:not(.future-theme) #page-home .panel-body,
+body:not(.future-theme) #page-home .panel-body :is(p,span,div,small,b,strong) {
+  color:#263b4a;
+}
+body:not(.future-theme) #page-home .panel-title { color:#fff !important; }
+body:not(.future-theme) #page-home #hero :is(h1,p,.fb-hero-note) { color:#fff !important; }
+</style>
+
 </head>
 <body>
 
