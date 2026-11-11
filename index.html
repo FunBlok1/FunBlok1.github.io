@@ -653,6 +653,31 @@ body:not(.future-theme) #footer{background:#153b58;color:#d4e3e9;border-top:4px 
  body:not(.future-theme) #theme-switcher{font-size:10px}
 }
 </style>
+<style id="funblok-classic-form-fix">
+/* Classic-only contrast repair: form labels and fields must be readable. */
+body{background:#edf1f3!important;color:#17283a!important;}
+.announce-form,.forum-form,.form-row{color:#17283a!important;}
+.announce-form label,.forum-form label,.form-row label,
+.announce-form .form-row label,.forum-form .form-row label{
+  display:block;color:#17283a!important;font-weight:700!important;
+}
+.announce-form input,.announce-form textarea,.announce-form select,
+.forum-form input,.forum-form textarea,.forum-form select,
+.form-row input,.form-row textarea,.form-row select,
+#studio-export-textarea,#studio-import-textarea{
+  background:#fff!important;color:#17283a!important;
+  border:1px solid #9aabb5!important;border-radius:3px!important;
+  box-shadow:none!important;
+}
+.announce-form input::placeholder,.announce-form textarea::placeholder,
+.forum-form input::placeholder,.forum-form textarea::placeholder,
+.form-row input::placeholder,.form-row textarea::placeholder{color:#667784!important;opacity:1;}
+.announce-form input:focus,.announce-form textarea:focus,
+.forum-form input:focus,.forum-form textarea:focus,
+.form-row input:focus,.form-row textarea:focus{
+  outline:2px solid #278b91!important;outline-offset:1px;
+}
+</style>
 </head>
 <body>
 
