@@ -6289,6 +6289,73 @@ body:not(.future-theme) input, body:not(.future-theme) textarea, body:not(.futur
 <script id="funblok-quick-links-js">
 (()=>{document.querySelectorAll("[data-quick-page]").forEach(el=>el.addEventListener("click",()=>{const page=el.getAttribute("data-quick-page");const link=document.querySelector('#navlinks a[data-page="'+page+'"]');if(link)link.click()}))})();
 </script>
+
+<style id="funblok-final-sitewide-repair">
+/* Final classic UI repair: readable content and predictable page visibility. */
+body { color-scheme: light !important; }
+.page.active { display:block !important; visibility:visible !important; opacity:1 !important; }
+.page:not(.active) { display:none !important; }
+#navlinks a[data-page="home"] { display:inline-flex !important; visibility:visible !important; opacity:1 !important; }
+#page-home.active { display:block !important; min-height:240px; }
+#page-home.active #hero { display:block !important; }
+#page-home.active .panel { display:block; }
+
+/* Most content surfaces are light in the retained classic design. */
+body:not(.future-theme) .page :is(.panel-body, .ud-card, .nova-admin-hero, .nova-toolbar, .nova-user-card) {
+  color:#203747 !important;
+}
+body:not(.future-theme) .page .panel-body :is(h1,h2,h3,h4,h5,h6,p,li,label,small,span,div,td,th,legend,summary) {
+  color:#263b4a;
+  opacity:1;
+  text-shadow:none;
+}
+body:not(.future-theme) .page :is(.panel-title) { color:#fff !important; }
+body:not(.future-theme) #hero,
+body:not(.future-theme) #hero :is(h1,h2,h3,p,span,small) { color:#fff !important; }
+body:not(.future-theme) #footer,
+body:not(.future-theme) #footer :is(a,p,span,small) { color:#eaf2f5 !important; }
+body:not(.future-theme) .page :is(button,.btn,.ud-btn,.fb-mp-btn) { color:#fff !important; }
+body:not(.future-theme) .page :is(.btn-outline,.ud-btn.alt,.fb-mp-btn.secondary) {
+  color:#17465f !important; background:#fff !important;
+}
+body:not(.future-theme) .page :is(input,textarea,select) {
+  color:#17283a !important; background:#fff !important; caret-color:#17283a !important;
+}
+body:not(.future-theme) .page :is(input,textarea,select)::placeholder { color:#586d79 !important; opacity:1 !important; }
+body:not(.future-theme) .page :is(.thumb,.game-thumb,.nova-stat) { color:#fff !important; }
+body:not(.future-theme) .page .nova-stat :is(b,span) { color:#fff !important; }
+body:not(.future-theme) .page :is(.muted,.hint,.help-text,.description,.subtitle,.meta,.plays,.ud-sub,.ud-mini) {
+  color:#526875 !important; opacity:1 !important;
+}
+body:not(.future-theme) .page :is(a:not(.btn)) { color:#145d80; }
+body:not(.future-theme) .page :is(a:not(.btn)):hover { color:#0b405c; }
+body:not(.future-theme) :is(button,a,input,select,textarea,[tabindex]):focus-visible {
+  outline:3px solid #d66d1e !important; outline-offset:2px !important;
+}
+body:not(.future-theme) .page :is(.panel-body,.ud-card,.gamecard,.form-row) { min-width:0; overflow-wrap:anywhere; }
+@media(max-width:650px) {
+  body:not(.future-theme) .page { max-width:100%; }
+  body:not(.future-theme) #page-home #hero { margin-left:0 !important; margin-right:0 !important; }
+}
+</style>
+<script id="funblok-home-safe-start">
+(function(){
+  function ensureHome(){
+    const pages=[...document.querySelectorAll('.page')];
+    if(!pages.length)return;
+    if(!pages.some(p=>p.classList.contains('active'))){
+      pages.forEach(p=>p.classList.remove('active'));
+      document.getElementById('page-home')?.classList.add('active');
+    }
+    const homeLink=document.querySelector('#navlinks a[data-page="home"]');
+    if(homeLink){homeLink.style.visibility='visible';homeLink.style.opacity='1';}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensureHome,{once:true});
+  else ensureHome();
+  window.addEventListener('load',ensureHome,{once:true});
+})();
+</script>
+
 </body>
 </html>
 
