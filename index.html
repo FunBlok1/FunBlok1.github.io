@@ -497,7 +497,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
 <script id="funblok-ultimate-js">
 (function(){
   const KEY='funblok_ultimate_profile_v1';
-  const defaults={xp:0,level:1,streak:1,dailyClaimed:'',plays:0,year:3,quests:{play:0,studio:0,social:0},badges:[]};
+  const defaults={xp:0,level:1,streak:1,dailyClaimed:'',plays:0,quests:{play:0,studio:0,social:0},badges:[]};
   function get(){try{return Object.assign({},defaults,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return Object.assign({},defaults)}}
   function put(x){localStorage.setItem(KEY,JSON.stringify(x));return x}
   function toast(t){let e=document.getElementById('ud-toast');if(!e){e=document.createElement('div');e.id='ud-toast';e.className='ud-toast';document.body.appendChild(e)}e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),2300)}
@@ -508,18 +508,151 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
   function play(name){let d=get();d.plays++;d.quests.play=Math.min(3,(d.quests.play||0)+1);put(d);addXP(20);try{showPage('games');setTimeout(()=>{let b=[...document.querySelectorAll('#gamegrid2 button,#gamegrid2 .game-card button')].find(x=>(x.textContent||'').toLowerCase().includes(name.toLowerCase()));if(b)b.click()},250)}catch(e){showPage('games')} }
   function studio(){let d=get();d.quests.studio=Math.min(1,(d.quests.studio||0)+1);put(d);addXP(15);showPage('studio');toast('🛠️ Studio opened — build something awesome!')}
   function social(){let d=get();d.quests.social=Math.min(2,(d.quests.social||0)+1);put(d);addXP(15);showPage('forums');toast('💬 Community opened!')}
-  function setYear(v){let d=get();d.year=Math.max(1,Math.min(6,Number(v)||3));put(d);render()} window.funblokUltimate={claim,play,studio,social,addXP,setYear};
+  window.funblokUltimate={claim,play,studio,social,addXP};
   function render(){let root=document.getElementById('ultimate-dash');if(!root)return;let d=get(),u=me(),name=u?.displayName||u?.username||'Player',need=xpNeeded(d.level),pct=Math.min(100,Math.round(d.xp/need*100)),today=new Date().toISOString().slice(0,10),claimed=d.dailyClaimed===today;
     root.innerHTML=`<div class="ud-top"><div><div class="ud-title">Welcome back, ${String(name).replace(/[&<>]/g,'')} 👋</div><div class="ud-sub">Your FunBlok home base — play, create, trade, and level up.</div></div><div class="ud-actions"><button class="ud-btn good" onclick="funblokUltimate.claim()">${claimed?'✓ Claimed today':'🎁 Daily reward'}</button><button class="ud-btn" onclick="funblokUltimate.studio()">🧱 Create</button><button class="ud-btn alt" onclick="funblokUltimate.social()">💬 Community</button></div></div>
     <div class="ud-grid"><div class="ud-card"><h3>🔥 Featured games</h3><div class="ud-game" onclick="funblokUltimate.play('Coin Clicker')"><div class="ud-icon">🪙</div><div><b>Coin Clicker</b><small>Build your FCoin empire</small></div></div><div class="ud-game" onclick="funblokUltimate.play('Obby')"><div class="ud-icon">🧱</div><div><b>Obby Challenge</b><small>Jump, dodge, survive</small></div></div><div class="ud-game" onclick="funblokUltimate.play('Dodge')"><div class="ud-icon">⚡</div><div><b>Dodge Rush</b><small>Fast reflexes, high scores</small></div></div></div>
     <div class="ud-card"><h3>⭐ Player level</h3><div class="ud-stat">Lv. ${d.level}</div><div class="ud-mini">${d.xp} / ${need} XP</div><div class="ud-progress"><span style="width:${pct}%"></span></div><div style="margin-top:13px"><span class="ud-badge">🔥 ${d.streak||1} day streak</span> <span class="ud-badge">🎮 ${d.plays||0} plays</span></div></div>
-    <div class="ud-card"><h3>🎯 Daily quests</h3><label for="ud-year" class="ud-mini">Choose school year</label><select id="ud-year" onchange="funblokUltimate.setYear(this.value)" style="display:block;width:100%;padding:9px;margin:7px 0 10px;border:1px solid #d6dee8;border-radius:10px;background:#fff;color:#172033"><option value="1" ${Number(d.year||3)===1?'selected':''}>Year 1</option><option value="2" ${Number(d.year||3)===2?'selected':''}>Year 2</option><option value="3" ${Number(d.year||3)===3?'selected':''}>Year 3</option><option value="4" ${Number(d.year||3)===4?'selected':''}>Year 4</option><option value="5" ${Number(d.year||3)===5?'selected':''}>Year 5</option><option value="6" ${Number(d.year||3)===6?'selected':''}>Year 6</option></select><div class="ud-quest"><span>${({1:'Solve 8 addition/subtraction questions to 20',2:'Solve 10 two-digit addition/subtraction questions',3:'Complete 8 times-table and division questions',4:'Solve 10 multi-step multiplication/division questions',5:'Solve 10 fraction, decimal and percentage problems',6:'Solve 12 mixed arithmetic and reasoning problems'})[Number(d.year||3)]}</span></div><div class="ud-quest"><span>${({1:'Read for 10 minutes and tell 3 facts',2:'Read for 15 minutes and write 4 sentences',3:'Read for 20 minutes and summarise the main idea',4:'Read for 20 minutes and explain a character’s motives',5:'Read for 25 minutes and compare two characters',6:'Read for 30 minutes and support an inference with evidence'})[Number(d.year||3)]}</span></div><div class="ud-quest"><span>${({1:'Name 3 animals and their habitats',2:'Explain what plants need to grow',3:'Describe a simple food chain',4:'Explain how a habitat affects survival',5:'Plan a fair test and name the variables',6:'Plan an investigation, identify variables and predict results'})[Number(d.year||3)]}</span></div><div class="ud-quest"><span>Play 3 games <b>${d.quests.play||0}/3</b></span></div><div class="ud-quest"><span>Open Studio <b>${d.quests.studio||0}/1</b></span></div><div class="ud-quest"><span>Visit Community <b>${d.quests.social||0}/2</b></span></div><div style="margin-top:10px" class="ud-mini">Challenges get harder from Year 1 to Year 6. Learning tasks are prompts, not automatically marked.</div></div></div>`;
+    <div class="ud-card"><h3>🎯 Creator quests</h3><div class="ud-quest"><span>Play 3 games</span><b>${d.quests.play||0}/3</b></div><div class="ud-quest"><span>Open Studio</span><b>${d.quests.studio||0}/1</b></div><div class="ud-quest"><span>Visit Community</span><b>${d.quests.social||0}/2</b></div><div class="ud-quest"><span>Publish a world</span><b>Coming soon</b></div><div style="margin-top:10px" class="ud-mini">Explore, build and share something new every day.</div></div></div>`;
   }
   function mount(){let home=document.getElementById('page-home');if(!home||document.getElementById('ultimate-dash'))return;let hero=home.querySelector('#hero')||home.firstElementChild;let box=document.createElement('div');box.id='ultimate-dash';(hero?.parentNode||home).insertBefore(box,hero?.nextSibling||null);render()}
   const old=window.showPage;window.showPage=function(n){if(typeof old==='function')old.apply(this,arguments);if(n==='home')setTimeout(render,0)};
   document.addEventListener('DOMContentLoaded',()=>setTimeout(mount,50));setTimeout(mount,300);
 })();
 </script>
+
+<style id="funblok-original-retro">
+/* FUNBLOK ORIGINAL CLASSIC INTERFACE — a fresh, independently styled 2014-era sandbox look */
+body:not(.future-theme){
+  --fb-ink:#17283a;--fb-navy:#153b58;--fb-blue:#176b91;--fb-teal:#278b91;
+  --fb-orange:#ed8735;--fb-paper:#edf1f3;--fb-line:#b9c7cf;
+  background-color:var(--fb-paper);
+  background-image:linear-gradient(90deg,rgba(28,69,91,.035) 1px,transparent 1px),linear-gradient(rgba(28,69,91,.035) 1px,transparent 1px);
+  background-size:24px 24px;color:var(--fb-ink);font-family:Tahoma,Arial,sans-serif;
+}
+body:not(.future-theme) #header{
+  position:relative;z-index:100;background:linear-gradient(#214e6c,#153b58);
+  border:0;border-bottom:5px solid #e88a3c;padding:12px max(18px,calc((100% - 1180px)/2));
+  gap:18px;box-shadow:0 3px 0 rgba(13,35,52,.18);align-items:center;
+}
+body:not(.future-theme) #logo{
+  display:flex;align-items:center;gap:0;font-family:Tahoma,Arial,sans-serif;font-size:27px;
+  font-weight:900;letter-spacing:-1.5px;white-space:nowrap;color:#fff;
+  text-shadow:0 2px 0 rgba(0,0,0,.22);
+}
+body:not(.future-theme) #logo:before{
+  content:"";width:27px;height:27px;margin-right:9px;display:inline-block;
+  background:linear-gradient(135deg,#ffd36a 0 48%,#ed8735 49% 100%);
+  border:2px solid #fff;box-shadow:3px 3px 0 rgba(0,0,0,.2);transform:rotate(-4deg);
+}
+body:not(.future-theme) #logo .b1{color:#fff3d4}
+body:not(.future-theme) #logo .b2{color:#ffd36a}
+body:not(.future-theme) #navlinks{display:flex;align-items:center;gap:4px;flex-wrap:wrap;color:#e9f4f7;font-size:12px}
+body:not(.future-theme) #navlinks a{padding:9px 9px;border:1px solid transparent;border-radius:2px;color:#e9f4f7;transition:background .12s,border-color .12s}
+body:not(.future-theme) #navlinks a.active,body:not(.future-theme) #navlinks a:hover{
+  background:#0e2e46;border:1px solid rgba(255,255,255,.18);border-bottom:2px solid #f3a04c;color:#fff
+}
+body:not(.future-theme) #authbox{color:#fff;gap:6px;font-size:12px}
+body:not(.future-theme) .btn{
+  border:1px solid #c96c25;border-radius:2px;padding:8px 13px;
+  background:linear-gradient(#f5a451,#e47a2d);box-shadow:inset 0 1px rgba(255,255,255,.42),0 2px 0 #a95420;
+  color:#fff;font-family:Tahoma,Arial,sans-serif;text-shadow:0 1px rgba(0,0,0,.2)
+}
+body:not(.future-theme) .btn:hover{background:linear-gradient(#ffb96c,#ed8735);transform:translateY(-1px)}
+body:not(.future-theme) .btn-outline{background:linear-gradient(#fff,#e7edf0);border:1px solid #aabac3;color:#214d67;text-shadow:none;box-shadow:inset 0 1px #fff,0 2px 0 #c5d0d5}
+body:not(.future-theme) .btn-outline:hover{background:#fff;color:#123b55}
+body:not(.future-theme) #theme-switcher{border:1px solid #8eabb8;background:#e9f0f2;color:#20475f;border-radius:2px;padding:7px 10px;font-weight:bold;cursor:pointer}
+body:not(.future-theme) #future-tools{
+  max-width:1180px;margin:10px auto 0;padding:7px 10px;background:#dce6ea;
+  border:1px solid #b8c9d1;border-bottom:3px solid #b3c4cc;display:flex;gap:7px;align-items:center;flex-wrap:wrap
+}
+body:not(.future-theme) #future-tools .future-tool{
+  background:#f9fbfc;color:#244b62;border:1px solid #b4c5ce;border-radius:2px;
+  padding:7px 10px;font: bold 11px Tahoma,Arial,sans-serif;cursor:pointer
+}
+body:not(.future-theme) #future-tools .future-tool:hover{background:#fff;border-color:#ed8735}
+body:not(.future-theme) #future-tools .pulse{margin-left:auto;color:#317e72;font-size:10px}
+body:not(.future-theme) .page{max-width:1180px;margin:17px auto;padding:0 16px}
+body:not(.future-theme) .panel{
+  background:#fff;border:1px solid var(--fb-line);border-radius:2px;margin-bottom:16px;
+  box-shadow:0 2px 0 rgba(30,64,81,.08);overflow:hidden
+}
+body:not(.future-theme) .panel-title{
+  background:linear-gradient(90deg,#1d5877,#287f8b);border-radius:0;padding:10px 13px;
+  font: bold 13px Tahoma,Arial,sans-serif;letter-spacing:.25px;color:#fff
+}
+body:not(.future-theme) .panel-body{padding:15px}
+body:not(.future-theme) #hero{
+  position:relative;isolation:isolate;overflow:hidden;text-align:left;
+  min-height:240px;padding:38px clamp(22px,5vw,64px);
+  background:linear-gradient(110deg,#143b58 0%,#1e6078 62%,#277f7c 100%);
+  border:1px solid #17445e;box-shadow:0 3px 0 rgba(14,43,61,.2)
+}
+body:not(.future-theme) #hero:before{
+  content:"";position:absolute;z-index:-1;right:7%;bottom:-25px;width:170px;height:150px;
+  background:linear-gradient(135deg,#f7bb61 0 49%,#df8438 50% 100%);
+  border:7px solid rgba(255,255,255,.13);box-shadow:28px -28px 0 -7px #e8a14c,56px -56px 0 -14px #f2c56c,84px -84px 0 -21px #d97838;
+  transform:rotate(45deg);opacity:.9
+}
+body:not(.future-theme) #hero:after{
+  content:"";position:absolute;right:5%;top:20px;width:10px;height:10px;background:#fff2c6;
+  box-shadow:-38px 28px 0 #fff2c6,-78px 58px 0 rgba(255,255,255,.65),-116px 8px 0 rgba(255,255,255,.5);
+  opacity:.7
+}
+body:not(.future-theme) #hero .fb-hero-inner{max-width:690px;position:relative;z-index:2}
+body:not(.future-theme) #hero .fb-hero-kicker{display:inline-block;background:#f1a14c;color:#263e4c;padding:6px 9px;font-size:10px;font-weight:900;letter-spacing:1.2px;border:1px solid #ffd28c}
+body:not(.future-theme) #hero h1{font:900 clamp(30px,4vw,46px)/1.05 Tahoma,Arial,sans-serif;color:#fff;margin:14px 0 9px;text-shadow:0 3px 0 rgba(0,0,0,.16)}
+body:not(.future-theme) #hero p{font-size:14px;line-height:1.6;max-width:560px;color:#e0edf1;opacity:1}
+body:not(.future-theme) #hero .fb-hero-note{font-size:11px;color:#d0e8e4;margin-top:14px}
+body:not(.future-theme) #gamegrid,body:not(.future-theme) #gamegrid2{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+body:not(.future-theme) .gamecard{position:relative;background:#fff;border:1px solid #bdcbd2;border-radius:2px;box-shadow:0 2px 0 #d3dce0;transition:transform .12s,box-shadow .12s}
+body:not(.future-theme) .gamecard:hover{transform:translateY(-3px);border-color:#df8b42;box-shadow:0 5px 0 #c7d2d7}
+body:not(.future-theme) .thumb{height:116px;font-size:26px;text-shadow:0 2px 2px rgba(0,0,0,.25);border-bottom:3px solid rgba(0,0,0,.12)}
+body:not(.future-theme) .gamecard .info{padding:10px}
+body:not(.future-theme) .gamecard .gname{font-size:13px;color:#1b4259}
+body:not(.future-theme) .gamecard .plays{font-size:11px;color:#71838c}
+body:not(.future-theme) #ultimate-dash{
+  margin:15px 0 22px;padding:16px;border:1px solid #bdcbd2;border-radius:2px;
+  background:#e4ecef;box-shadow:inset 0 1px #fff,0 2px 0 #cbd7dc
+}
+body:not(.future-theme) .ud-title{font-family:Tahoma,Arial,sans-serif;font-size:24px;color:#1d4c66}
+body:not(.future-theme) .ud-sub,body:not(.future-theme) .ud-mini{color:#617783}
+body:not(.future-theme) .ud-card{background:#fff;border:1px solid #c2d0d6;border-radius:2px;padding:13px;min-height:120px}
+body:not(.future-theme) .ud-card h3{color:#24556d}
+body:not(.future-theme) .ud-game{border-radius:2px;background:#edf3f5}
+body:not(.future-theme) .ud-game:hover{background:#e2edf0}
+body:not(.future-theme) .ud-icon{border-radius:2px;background:#d5e6e9}
+body:not(.future-theme) .ud-btn{border-radius:2px;background:#236d82;box-shadow:0 2px 0 #174c61}
+body:not(.future-theme) .ud-btn.alt{background:#fff;color:#24566d;border:1px solid #b6c7ce;box-shadow:0 2px 0 #c8d4d9}
+body:not(.future-theme) .ud-btn.good{background:#368c68;box-shadow:0 2px 0 #246b4d}
+body:not(.future-theme) .ud-progress{border-radius:2px;background:#dce5e8}
+body:not(.future-theme) .ud-progress span{border-radius:2px;background:#e99143}
+body:not(.future-theme) .ud-badge{border-radius:2px;background:#e4eff0;color:#286b72}
+body:not(.future-theme) input,body:not(.future-theme) select,body:not(.future-theme) textarea{
+  border:1px solid #aebfc7;border-radius:2px;padding:8px 9px;font:13px Tahoma,Arial,sans-serif
+}
+body:not(.future-theme) input:focus,body:not(.future-theme) select:focus,body:not(.future-theme) textarea:focus{outline:2px solid rgba(39,139,145,.22);border-color:#278b91}
+body:not(.future-theme) #footer{background:#153b58;color:#d4e3e9;border-top:4px solid #e88a3c;padding:20px;margin-top:30px}
+@media(max-width:900px){
+ body:not(.future-theme) #header{padding:12px 16px}
+ body:not(.future-theme) #authbox{margin-left:0}
+ body:not(.future-theme) #future-tools{margin:8px 12px 0}
+}
+@media(max-width:650px){
+ body:not(.future-theme) #header{gap:10px}
+ body:not(.future-theme) #navlinks{order:3;width:100%;gap:3px}
+ body:not(.future-theme) #navlinks a{padding:8px 7px}
+ body:not(.future-theme) #authbox{margin-left:auto}
+ body:not(.future-theme) #hero{min-height:220px;padding:28px 20px}
+ body:not(.future-theme) #hero:before{right:-35px;opacity:.35}
+ body:not(.future-theme) #gamegrid,body:not(.future-theme) #gamegrid2{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body:not(.future-theme) .ud-grid{grid-template-columns:1fr}
+}
+@media(max-width:420px){
+ body:not(.future-theme) #gamegrid,body:not(.future-theme) #gamegrid2{grid-template-columns:1fr}
+ body:not(.future-theme) #theme-switcher{font-size:10px}
+}
+</style>
 </head>
 <body>
 
@@ -871,7 +1004,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
 </div>
 
 
-<!-- SCHOOL: MATHS + TYPING -->
+<!-- ACCOUNT -->
 <div class="page" id="page-account">
   <div class="panel" id="auth-panel">
     <div class="panel-title">Log In</div>
@@ -6087,88 +6220,7 @@ body:not(.future-theme) input, body:not(.future-theme) textarea, body:not(.futur
 </style>
 
 <script>
-/* FUNBLOK SCHOOL ZONE SCRIPT */
-(function(){
-  const prompts = [
-    "Small steps make big progress.",
-    "Practice helps your skills grow.",
-    "Curious minds ask great questions.",
-    "Build a world and share your ideas.",
-    "Read carefully and check your work.",
-    "Learning can be fun every day."
-  ];
-  let answer = 0, score = 0, streak = 0, startedAt = 0, timerId = null;
-  function byId(id){return document.getElementById(id)}
-  function question(){
-    const level = byId("school-maths-level"); if(!level) return;
-    const mode = level.value;
-    let a,b,op;
-    if(mode==="easy"){a=1+Math.floor(Math.random()*20);b=1+Math.floor(Math.random()*20);op=Math.random()<.5?"+":"-";}
-    else if(mode==="medium"){a=2+Math.floor(Math.random()*12);b=2+Math.floor(Math.random()*12);op=Math.random()<.5?"×":"+";}
-    else {a=5+Math.floor(Math.random()*45);b=2+Math.floor(Math.random()*20);op=["×","-","+"][Math.floor(Math.random()*3)];}
-    if(op==="-" && b>a){const t=a;a=b;b=t;}
-    answer=op==="+"?a+b:op==="-"?a-b:a*b;
-    byId("school-maths-question").textContent=a+" "+op+" "+b+" = ?";
-    byId("school-maths-answer").value="";
-    byId("school-maths-result").textContent="";
-    byId("school-maths-answer").focus();
-  }
-  function newTyping(){
-    const old=byId("school-typing-prompt")?.textContent;
-    let options=prompts.filter(p=>p!==old); if(!options.length)options=prompts;
-    byId("school-typing-prompt").textContent=options[Math.floor(Math.random()*options.length)];
-    byId("school-typing-input").value="";
-    byId("school-typing-result").textContent="Start typing to begin.";
-    byId("school-typing-time").textContent="0s";
-    byId("school-typing-accuracy").textContent="100%";
-    startedAt=0;
-    if(timerId){clearInterval(timerId);timerId=null;}
-    byId("school-typing-input").focus();
-  }
-  function init(){
-    if(!byId("page-school") || byId("page-school").dataset.ready==="1")return;
-    byId("page-school").dataset.ready="1";
-    byId("school-maths-form").addEventListener("submit",function(e){
-      e.preventDefault();
-      const raw=byId("school-maths-answer").value.trim();
-      const result=byId("school-maths-result");
-      if(raw!=="" && Number(raw)===answer){score++;streak++;result.textContent="Correct! Nice work 🎉";result.style.color="#16803c";}
-      else{streak=0;result.textContent="Not quite — the answer is "+answer+". Try the next one!";result.style.color="#c0392b";}
-      byId("school-maths-score").textContent=score;
-      byId("school-maths-streak").textContent=streak;
-    });
-    byId("school-maths-next").addEventListener("click",question);
-    byId("school-maths-level").addEventListener("change",question);
-    byId("school-typing-new").addEventListener("click",newTyping);
-    byId("school-typing-input").addEventListener("input",function(){
-      const typed=this.value, target=byId("school-typing-prompt").textContent;
-      if(typed.length && !startedAt){
-        startedAt=Date.now();
-        timerId=setInterval(()=>{if(startedAt)byId("school-typing-time").textContent=Math.floor((Date.now()-startedAt)/1000)+"s";},250);
-      }
-      let correct=0;for(let i=0;i<Math.min(typed.length,target.length);i++)if(typed[i]===target[i])correct++;
-      const accuracy=typed.length?Math.round(correct/typed.length*100):100;
-      byId("school-typing-accuracy").textContent=accuracy+"%";
-      const elapsed=startedAt?Math.max(1,(Date.now()-startedAt)/60000):0;
-      const wpm=elapsed?Math.round((typed.trim().split(/\s+/).filter(Boolean).length)/elapsed):0;
-      const result=byId("school-typing-result");
-      if(typed===target){
-        const seconds=Math.max(1,Math.round((Date.now()-startedAt)/1000));
-        result.textContent="Completed in "+seconds+"s · "+wpm+" WPM · "+accuracy+"% accuracy!";
-        result.style.color="#16803c";startedAt=0;if(timerId){clearInterval(timerId);timerId=null;}
-      }else{
-        result.textContent=typed===target.slice(0,typed.length)?"Keep going — perfect so far!":"Check the highlighted-by-position text and correct any mistakes.";
-        result.style.color=typed===target.slice(0,typed.length)?"#1769aa":"#b45309";
-      }
-    });
-    question();newTyping();
-  }
-  document.addEventListener("DOMContentLoaded",init);
-  const oldShowPage=window.showPage;
-  if(typeof oldShowPage==="function")window.showPage=function(name){oldShowPage.apply(this,arguments);if(name==="school")init();};
-  setTimeout(init,100);
-})();
-</script>
+
 
 </body>
 </html>
