@@ -169,8 +169,8 @@
   #footer { text-align: center; font-size: 11px; color: #888; padding: 20px; }
 
 .fb-pressed{transform:translateY(1px) scale(.98)!important;filter:brightness(1.15);}
-/* ================= FUTURISTIC FUNBLOK THEME ================= */
-body.future-theme{
+/* ================= REMOVED THEME STYLES ================= */
+body.__removed_future_theme__{
   --bg:#070914;
   --bg2:#0b1020;
   --panel:#10172a;
@@ -409,7 +409,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
   border:1px solid #c9c9c9; background:#fff; color:#333; border-radius:4px;
   padding:5px 9px; font:12px Arial,sans-serif; cursor:pointer;
 }
-.future-theme #theme-switcher{
+#theme-switcher{
   background:rgba(7,15,30,.82); color:#8dfaff; border-color:rgba(53,246,255,.55);
   box-shadow:0 0 14px rgba(53,246,255,.12); font-family:Inter,Segoe UI,Arial,sans-serif;
 }
@@ -422,7 +422,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
   border:1px solid rgba(53,246,255,.22);
   border-radius:10px;
 }
-.future-theme #future-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#future-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .future-tool{
   border:1px solid #29435f;background:#0b1425;color:#bdefff;border-radius:6px;
   padding:7px 11px;cursor:pointer;font-size:11px;
@@ -523,7 +523,7 @@ body.future-theme .upgrade-row{background:#0d1629;border:1px solid #263652;color
 
 <style id="funblok-original-retro">
 /* FUNBLOK ORIGINAL CLASSIC INTERFACE — a fresh, independently styled 2014-era sandbox look */
-body:not(.future-theme){
+body{
   --fb-ink:#17283a;--fb-navy:#153b58;--fb-blue:#176b91;--fb-teal:#278b91;
   --fb-orange:#ed8735;--fb-paper:#edf1f3;--fb-line:#b9c7cf;
   background-color:var(--fb-paper);
@@ -675,11 +675,10 @@ body:not(.future-theme) #footer{background:#153b58;color:#d4e3e9;border-top:4px 
     <a data-page="owner" class="owner-link">Owner Panel</a>
   </div>
   <div id="authbox"></div>
-  <button id="theme-switcher" type="button" title="Switch between the classic and futuristic themes">⚡ Futuristic</button>
 </div>
 
-<div id="future-tools">
-  <button type="button" class="future-tool" data-future-page="home">⌂ Home</button>
+<div id="funblok-quick-links">
+  <button type="button" class="quick-link" data-quick-page="home">⌂ Home</button>
   <button type="button" class="future-tool" data-future-page="games">▶ Games</button>
   <button type="button" class="future-tool" data-future-page="studio">✦ Studio</button>
   <button type="button" class="future-tool" data-future-page="catalog">◇ Catalog</button>
@@ -4905,65 +4904,6 @@ function initStudioOnce() {
 
 
 /* =========================================================
-   THEME SYSTEM + FUTURE EXTRAS
-   ========================================================= */
-function initFunBlokThemeExtras(){
-  const THEME_KEY = "funblok_theme";
-  const body = document.body;
-  const switcher = document.getElementById("theme-switcher");
-  const dock = document.getElementById("future-dock");
-  const toast = document.getElementById("future-toast");
-
-  function isFuture(){ return body.classList.contains("future-theme"); }
-  function applyTheme(future, announce){
-    body.classList.toggle("future-theme", future);
-    localStorage.setItem(THEME_KEY, future ? "future" : "classic");
-    if (switcher) switcher.textContent = future ? "◐ Classic" : "⚡ Futuristic";
-    if (announce) showToast(future ? "NOVA theme enabled" : "Classic theme enabled");
-  }
-  function showToast(msg){
-    if (!toast) return;
-    toast.textContent = msg;
-    toast.classList.add("show");
-    clearTimeout(window.__fbToastTimer);
-    window.__fbToastTimer = setTimeout(()=>toast.classList.remove("show"),1800);
-  }
-  function go(page){
-    const link = document.querySelector('#navlinks a[data-page="'+page+'"]');
-    if(link) link.click();
-  }
-
-  applyTheme(localStorage.getItem(THEME_KEY) !== "classic", false);
-
-  switcher?.addEventListener("click", ()=>applyTheme(!isFuture(), true));
-  document.getElementById("dock-theme")?.addEventListener("click", ()=>applyTheme(!isFuture(), true));
-  document.getElementById("dock-top")?.addEventListener("click", ()=>window.scrollTo({top:0,behavior:"smooth"}));
-  document.getElementById("dock-min")?.addEventListener("click", ()=>dock.classList.toggle("minimized"));
-  document.querySelectorAll("[data-future-page]").forEach(el=>el.addEventListener("click",()=>go(el.dataset.futurePage)));
-
-  document.addEventListener("keydown", e=>{
-    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==="t"){
-      e.preventDefault(); applyTheme(!isFuture(), true);
-    }
-  });
-
-  // Small live clock for the futuristic control deck.
-  const title = document.querySelector("#future-dock .dock-title");
-  if(title){
-    const tick=()=>{ title.textContent = "NOVA CONTROL DECK • "+new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}); };
-    tick(); setInterval(tick,1000);
-  }
-}
-
-/* Start after the entire HTML document has been parsed so every
-   futuristic control (including the NOVA dock) is available. */
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initFunBlokThemeExtras);
-} else {
-  initFunBlokThemeExtras();
-}
-
-/* =========================================================
    BUTTON SAFETY / UNIVERSAL INTERACTION
    ========================================================= */
 (function(){
@@ -5102,20 +5042,6 @@ async function initAppData() {
   startPresence();
 })();
 </script>
-
-<div id="future-dock">
-  <div class="dock-title">NOVA control deck</div>
-  <div class="dock-row">
-    <button type="button" id="dock-theme">Switch Theme</button>
-    <button type="button" id="dock-top">Back to Top</button>
-    <button type="button" data-future-page="games">Launch Games</button>
-    <button type="button" data-future-page="studio">Open Studio</button>
-    <button type="button" data-future-page="catalog">Open Catalog</button>
-    <button type="button" id="dock-min">Minimize</button>
-  </div>
-</div>
-<div id="future-toast"></div>
-
 <script id="nova-owner-script">
 (function(){
   function ownerOnly(){
