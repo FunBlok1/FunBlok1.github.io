@@ -742,6 +742,27 @@ body:not(.future-theme) #footer :is(a,p,span,small) { color: inherit; }
 }
 </style>
 
+
+<style id="funblok-owner-panel-contrast-fix">
+/* Owner command centre: this panel has a pale background, so use dark text
+   regardless of any legacy theme class or earlier NOVA styles. */
+#page-owner .nova-admin-hero,
+#page-owner .nova-admin-hero * { text-shadow:none !important; }
+#page-owner .nova-admin-hero h1,
+#page-owner .nova-admin-hero h2,
+#page-owner .nova-admin-hero h3 { color:#173e56 !important; }
+#page-owner .nova-admin-hero p,
+#page-owner .nova-admin-hero li,
+#page-owner .nova-admin-hero small { color:#304e63 !important; opacity:1 !important; }
+#page-owner .nova-admin-status { color:#174b58 !important; background:#e4f4f4 !important; border-color:#75bfc2 !important; }
+#page-owner .nova-admin-status .nova-dot { background:#16836e !important; box-shadow:none !important; }
+#page-owner .nova-admin-section,
+#page-owner .nova-admin-section :is(h1,h2,h3,h4,p,label,span,small,li,td,th) { color:#243e50; }
+#page-owner .nova-admin-section :is(input,textarea,select) { background:#fff !important; color:#17283a !important; }
+#page-owner .nova-stat span { color:#d9e8ef !important; }
+#page-owner .nova-stat b { color:#fff !important; }
+</style>
+
 </head>
 <body>
 
