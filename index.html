@@ -677,7 +677,7 @@ body:not(.future-theme) #footer{background:#153b58;color:#d4e3e9;border-top:4px 
   <div id="authbox"></div>
 </div>
 
-<div id="funblok-quick-links">
+<div id="future-tools">
   <button type="button" class="quick-link" data-quick-page="home">⌂ Home</button>
   <button type="button" class="future-tool" data-future-page="games">▶ Games</button>
   <button type="button" class="future-tool" data-future-page="studio">✦ Studio</button>
@@ -6148,6 +6148,9 @@ body:not(.future-theme) input, body:not(.future-theme) textarea, body:not(.futur
 <script>
 
 
+<script id="funblok-quick-links-js">
+(()=>{document.querySelectorAll("[data-quick-page]").forEach(el=>el.addEventListener("click",()=>{const page=el.getAttribute("data-quick-page");const link=document.querySelector('#navlinks a[data-page="'+page+'"]');if(link)link.click()}))})();
+</script>
 </body>
 </html>
 
