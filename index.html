@@ -678,6 +678,70 @@ body{background:#edf1f3!important;color:#17283a!important;}
   outline:2px solid #278b91!important;outline-offset:1px;
 }
 </style>
+
+<style id="funblok-readable-text">
+/* Site-wide classic-theme readability pass: avoid pale text on pale surfaces,
+   clipped labels, invisible placeholders and low-contrast disabled controls. */
+body:not(.future-theme) {
+  color-scheme: light;
+  color: #17283a;
+  -webkit-font-smoothing: antialiased;
+}
+body:not(.future-theme) :is(p, li, label, small, summary, dt, dd, td, th, figcaption, blockquote, legend) {
+  color: #263b4a;
+}
+body:not(.future-theme) :is(h1,h2,h3,h4,h5,h6) { color: #173e56; }
+body:not(.future-theme) :is(input,textarea,select) {
+  background-color: #fff !important;
+  color: #17283a !important;
+  border-color: #899eaa !important;
+}
+body:not(.future-theme) :is(input,textarea)::placeholder {
+  color: #586d79 !important;
+  opacity: 1 !important;
+}
+body:not(.future-theme) :is(button,.btn,.ud-btn) {
+  color: #fff;
+  text-shadow: none;
+}
+body:not(.future-theme) .btn,
+body:not(.future-theme) .ud-btn { background-color: #175d76; }
+body:not(.future-theme) .btn-outline,
+body:not(.future-theme) .ud-btn.alt {
+  background: #fff !important;
+  color: #17465f !important;
+}
+body:not(.future-theme) a:not(#navlinks a) { text-decoration-thickness: 1px; text-underline-offset: 2px; }
+body:not(.future-theme) :is(.muted,.hint,.help-text,.description,.subtitle,.meta,.plays,.ud-sub,.ud-mini) {
+  color: #526875 !important;
+}
+body:not(.future-theme) :is(.panel-body,.ud-card,.gamecard .info,.form-row,.announce-form,.forum-form) {
+  color: #17283a;
+}
+body:not(.future-theme) :is(.panel-body,.ud-card,.gamecard .info) :is(p,span,div,label,small,li) {
+  overflow-wrap: anywhere;
+}
+body:not(.future-theme) :is(button,a,input,select,textarea,[tabindex]):focus-visible {
+  outline: 3px solid #d66d1e !important;
+  outline-offset: 2px;
+}
+body:not(.future-theme) :is(.panel-body,.ud-card,.gamecard,.form-row) {
+  min-width: 0;
+}
+body:not(.future-theme) :is(.panel-body,.ud-card,.gamecard .info) {
+  line-height: 1.5;
+}
+body:not(.future-theme) :is(.panel-title,#header,#hero,#footer) {
+  color: #fff;
+}
+body:not(.future-theme) #header :is(a,span,small),
+body:not(.future-theme) #hero :is(h1,p,.fb-hero-note),
+body:not(.future-theme) #footer :is(a,p,span,small) { color: inherit; }
+@media (max-width: 650px) {
+  body:not(.future-theme) :is(.page,.panel-body,.ud-card) { overflow-wrap: anywhere; }
+}
+</style>
+
 </head>
 <body>
 
