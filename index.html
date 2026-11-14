@@ -839,6 +839,11 @@ body:not(.future-theme) #page-home #hero :is(h1,p,.fb-hero-note) { color:#fff !i
       <div class="fb-hero-note"><span class="fb-live-dot"></span> Free to explore · Built for players and creators</div>
     </div>
   </div>
+  <section id="fb-fun-zone" aria-label="FunBlok fun zone">
+    <div class="fb-fun-top"><div><span class="fb-fun-tag">🎉 THE FUN ZONE</span><h2>Got 2 minutes? LET'S GO!</h2><p>Can't decide what to play? Let FunBlok pick your next adventure.</p></div><div class="fb-fun-mascot" aria-hidden="true">🤖</div></div>
+    <div class="fb-fun-actions"><button type="button" id="fb-surprise-game">🎲 Surprise me!</button><button type="button" id="fb-roll-dare">⚡ Roll a silly challenge</button></div>
+    <div id="fb-fun-result" role="status" aria-live="polite">Your next adventure is waiting…</div>
+  </section>
   <div class="panel">
     <div class="panel-title">Featured Games</div>
     <div class="panel-body" id="gamegrid"></div>
@@ -6350,6 +6355,38 @@ body:not(.future-theme) .page :is(.panel-body,.ud-card,.gamecard,.form-row) { mi
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensureHome,{once:true});
   else ensureHome();
   window.addEventListener('load',ensureHome,{once:true});
+})();
+</script>
+
+
+<style id="fb-fun-zone-style">
+#fb-fun-zone{margin:0 0 18px;padding:18px;border:3px solid #f0a52b;border-radius:12px;background:linear-gradient(135deg,#fff4d8,#e4f8ff 60%,#f5e7ff);color:#19354a;box-shadow:0 5px 0 #d58a20}
+#fb-fun-zone .fb-fun-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#fb-fun-zone .fb-fun-tag{display:inline-block;padding:5px 9px;border-radius:20px;background:#ffcf54;color:#593600;font-size:11px;font-weight:900;letter-spacing:1px}
+#fb-fun-zone h2{margin:9px 0 4px;color:#163d59;font-size:clamp(20px,4vw,29px)}
+#fb-fun-zone p{margin:0;color:#38566a;font-size:14px}
+#fb-fun-zone .fb-fun-mascot{font-size:55px;filter:drop-shadow(0 4px 0 #d9b36c)}
+#fb-fun-zone .fb-fun-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:15px}
+#fb-fun-zone button{border:0;border-radius:8px;padding:11px 15px;background:#075d83;color:white;font-weight:800;cursor:pointer;box-shadow:0 3px 0 #06415d}
+#fb-fun-zone button+button{background:#8b3db1;box-shadow:0 3px 0 #5b2678}
+#fb-fun-zone button:hover{filter:brightness(1.12);transform:translateY(-1px)}
+#fb-fun-zone #fb-fun-result{margin-top:13px;padding:12px;border-radius:8px;background:#fff;color:#1c3a50;font-weight:700;min-height:22px}
+</style>
+<script id="fb-fun-zone-js">
+(function(){
+ const dares=["Play a game without jumping once!","Try to beat your best score.","Play the game you usually ignore.","Invite someone to your world.","Build something ridiculous in Studio.","Survive for 60 seconds without stopping!","Try three different games today.","Make the tallest tower you can!"];
+ function pickGame(){
+  if(!Array.isArray(window.gamesList) || !window.gamesList.length){const el=document.getElementById("fb-fun-result");if(el)el.textContent="Open Featured Games and pick an adventure!";return;}
+  const pool=window.gamesList.filter(g=>g.kind!=="studio");
+  const game=pool[Math.floor(Math.random()*pool.length)];
+  const el=document.getElementById("fb-fun-result");
+  if(el)el.innerHTML="🎮 Your random adventure: <strong>"+String(game.name).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+"</strong> — let's play!";
+  if(typeof window.launchGame==="function")window.launchGame(game.id);
+ }
+ document.addEventListener("DOMContentLoaded",function(){
+  document.getElementById("fb-surprise-game")?.addEventListener("click",pickGame);
+  document.getElementById("fb-roll-dare")?.addEventListener("click",function(){const d=dares[Math.floor(Math.random()*dares.length)];const el=document.getElementById("fb-fun-result");if(el)el.textContent="⚡ YOUR CHALLENGE: "+d;});
+ });
 })();
 </script>
 
