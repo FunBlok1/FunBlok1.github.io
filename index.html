@@ -6376,8 +6376,8 @@ body:not(.future-theme) .page :is(.panel-body,.ud-card,.gamecard,.form-row) { mi
 (function(){
  const dares=["Play a game without jumping once!","Try to beat your best score.","Play the game you usually ignore.","Invite someone to your world.","Build something ridiculous in Studio.","Survive for 60 seconds without stopping!","Try three different games today.","Make the tallest tower you can!"];
  function pickGame(){
-  if(!Array.isArray(window.gamesList) || !window.gamesList.length){const el=document.getElementById("fb-fun-result");if(el)el.textContent="Open Featured Games and pick an adventure!";return;}
-  const pool=window.gamesList.filter(g=>g.kind!=="studio");
+  if(typeof gamesList==="undefined" || !Array.isArray(gamesList) || !gamesList.length){const el=document.getElementById("fb-fun-result");if(el)el.textContent="Open Featured Games and pick an adventure!";return;}
+  const pool=gamesList.filter(g=>g.kind!=="studio");
   const game=pool[Math.floor(Math.random()*pool.length)];
   const el=document.getElementById("fb-fun-result");
   if(el)el.innerHTML="🎮 Your random adventure: <strong>"+String(game.name).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+"</strong> — let's play!";
