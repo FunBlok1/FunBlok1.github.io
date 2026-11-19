@@ -878,6 +878,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     <a data-page="players">Players</a>
     <a data-page="groups">Groups</a>
     <a data-page="marketplace">Marketplace</a>
+    <a data-page="report">Report</a>
     <a data-page="logs" class="logs-link">Game Logs</a>
     <a data-page="admin" class="admin-link">Admin Panel</a>
     <a data-page="coowner" class="coowner-link">Co-Owner Panel</a>
@@ -1217,6 +1218,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 </div>
 
 
+<div class="page" id="page-report"><div class="panel"><div class="panel-title">📝 Report a problem</div><div class="panel-body"><p>Found a bug or have an idea? Tell us what happened.</p><form id="fb-report-form"><label>Type of report</label><select id="fb-report-type"><option>Bug / something is broken</option><option>Game feedback</option><option>Player safety / behaviour</option><option>Idea or suggestion</option><option>Other</option></select><p><label>Game or page</label><input id="fb-report-place" maxlength="80" placeholder="e.g. Titanic game"></p><label>What happened?</label><textarea id="fb-report-detail" required minlength="10" maxlength="1200" rows="5" placeholder="Describe the problem or idea..."></textarea><p><button class="btn" type="submit">Save report on this device</button></p></form><p id="fb-report-status" role="status"></p><div style="background:#fff7e8;padding:10px;font-size:12px">Reports are saved in this browser only. They are not sent to the FunBlok team or shared across devices. Never include passwords.</div><h3>Saved reports</h3><div id="fb-report-list"></div></div></div></div>
 <!-- ACCOUNT -->
 <div class="page" id="page-account">
   <div class="panel" id="auth-panel">
@@ -6461,5 +6463,18 @@ body:not(.future-theme) .page :is(.panel-body,.ud-card,.gamecard,.form-row) { mi
 })();
 </script>
 
+<script id="fb-report-system">
+(function(){
+ const KEY="funblok_player_reports_v1";
+ function read(){try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){return[]}}
+ function safe(v){return String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+ function draw(){const el=document.getElementById("fb-report-list");if(!el)return;const a=read();el.innerHTML=a.length?a.slice().reverse().map(r=>"<div><b>"+safe(r.type)+"</b> · "+safe(r.place)+"<p>"+safe(r.detail)+"</p><small>"+safe(r.date)+"</small></div>").join(""):"<p>No reports saved yet.</p>"}
+ document.addEventListener("DOMContentLoaded",function(){
+  const f=document.getElementById("fb-report-form");if(!f)return;
+  f.addEventListener("submit",function(e){e.preventDefault();const a=read();a.push({type:document.getElementById("fb-report-type").value,place:document.getElementById("fb-report-place").value,detail:document.getElementById("fb-report-detail").value.trim(),date:new Date().toLocaleString()});try{localStorage.setItem(KEY,JSON.stringify(a.slice(-50)));document.getElementById("fb-report-status").textContent="Saved on this device. Thanks for the feedback!";f.reset();draw()}catch(err){document.getElementById("fb-report-status").textContent="Could not save the report."}});
+  draw();
+ });
+})();
+</script>
 </body>
 </html>
