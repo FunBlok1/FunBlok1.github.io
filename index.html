@@ -862,6 +862,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 @media(max-width:720px){#hero{text-align:center!important}#hero:after{right:-55px;bottom:-85px}#fb-fun-zone{padding:15px}#fb-fun-zone .fb-fun-mascot{font-size:38px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 </style>
+<style id="fb-titanic-style">.fb-titanic{background:#101e2b;color:#edf5f8;border-radius:9px;padding:15px;font-family:Arial,sans-serif}.fb-titanic h2{color:#fff;margin-top:0}.fb-titanic p{color:#c0d0da;line-height:1.5;font-size:13px}.fb-titanic-hud,.fb-titanic-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}.fb-titanic-hud span{background:#263b4a;padding:7px 10px;border-radius:4px;font-size:12px}#titanic-canvas{display:block;width:100%;height:auto;border:2px solid #6d8794;border-radius:5px;touch-action:none}.fb-titanic-controls button{min-width:48px;padding:10px 14px;border:0;border-radius:4px;background:#315b78;color:#fff;font-weight:bold;touch-action:none}.fb-titanic-controls #titanic-start{background:#d18b35;color:#21190f}#titanic-end{padding:10px;background:#1c3445;border-left:3px solid #d18b35;color:#fff;font-size:13px}</style>
 </head>
 <body>
 
@@ -3063,6 +3064,7 @@ const gamesList = [
   { id: "space", name: "Space Blaster", plays: "Shooter", color: "#16a085", kind: "arcade" },
   { id: "tower", name: "Tower Climb", plays: "Platformer", color: "#3498db", kind: "arcade" },
   { id: "treasure", name: "Treasure Rush", plays: "Collectathon", color: "#d4a017", kind: "arcade" },
+  { id: "titanic", name: "Titanic: Last Boat Out", plays: "Historical Rescue", color: "#315b78", kind: "arcade" },
 ];
 
 function gameCardSubtext(g) {
@@ -3132,7 +3134,7 @@ function launchGame(id) {
   try {
     const launchers = Object.fromEntries(gamesList.filter(g => g.kind !== "studio").map(g => [
       g.id,
-      () => window.THREE ? initThreeDWorldGame(holder, g.id) : initMegaArcade(holder, g.id)
+      () => g.id === "titanic" ? initTitanicGame(holder) : (window.THREE ? initThreeDWorldGame(holder, g.id) : initMegaArcade(holder, g.id))
     ]));
     const start = launchers[id];
     if (!start) throw new Error("This game does not have a launcher yet.");
@@ -3276,6 +3278,20 @@ function initThreeDWorldGame(holder, id) {
   };animate();
   currentGameCleanup=()=>{disposed=true;cancelAnimationFrame(raf);window.removeEventListener("resize",resize);document.removeEventListener("keydown",keydown);document.removeEventListener("keyup",keyup);renderer.dispose();renderer.domElement.remove();};
  } catch(err){console.error("FunBlok 3D engine failed",err);holder.innerHTML='<p style="padding:16px">3D could not start on this browser. Try reloading or use a browser with WebGL enabled.</p><button class="btn" onclick="showGameSelector()">Back to games</button>';}
+}
+
+function initTitanicGame(holder){
+ holder.innerHTML='<section class="fb-titanic"><h2>TITANIC: LAST BOAT OUT</h2><p>North Atlantic · April 1912. Find the six passengers and guide them to the lifeboat station.</p><div class="fb-titanic-hud"><span id="titanic-rescued">Passengers: 0 / 6</span><span id="titanic-time">Time: 90s</span><span id="titanic-status">Ready</span></div><canvas id="titanic-canvas" width="900" height="500" aria-label="Titanic deck rescue game"></canvas><div class="fb-titanic-controls"><button data-titanic="left">◀</button><button data-titanic="up">▲</button><button data-titanic="down">▼</button><button data-titanic="right">▶</button><button id="titanic-start">Start / Restart</button></div><p>Move with WASD or arrow keys. Touch buttons work on phones. Reach all six blue passenger markers, then go to the green lifeboat.</p><div id="titanic-end" aria-live="polite">Press Start when ready.</div></section>';
+ const c=holder.querySelector("#titanic-canvas"),ctx=c.getContext("2d"),hud=holder.querySelector("#titanic-rescued"),time=holder.querySelector("#titanic-time"),status=holder.querySelector("#titanic-status"),end=holder.querySelector("#titanic-end"),keys={},touch={};
+ const walls=[{x:0,y:0,w:900,h:18},{x:0,y:482,w:900,h:18},{x:0,y:0,w:18,h:500},{x:882,y:0,w:18,h:500},{x:180,y:18,w:18,h:120},{x:180,y:210,w:18,h:272},{x:360,y:18,w:18,h:175},{x:360,y:280,w:18,h:202},{x:540,y:18,w:18,h:110},{x:540,y:220,w:18,h:262},{x:720,y:18,w:18,h:180},{x:720,y:290,w:18,h:192},{x:18,y:160,w:120,h:18},{x:240,y:160,w:120,h:18},{x:420,y:160,w:120,h:18},{x:600,y:160,w:120,h:18},{x:180,y:350,w:180,h:18},{x:420,y:350,w:120,h:18},{x:600,y:350,w:120,h:18}];
+ let p,people,seconds,active=false,raf=0,last=0;
+ function reset(){p={x:65,y:70,r:12};people=[{x:115,y:90},{x:285,y:90},{x:455,y:90},{x:635,y:90},{x:285,y:420},{x:635,y:420}].map(o=>({x:o.x,y:o.y,saved:false}));seconds=90;active=false;hud.textContent="Passengers: 0 / 6";time.textContent="Time: 90s";status.textContent="Ready";end.textContent="Find everyone and reach the lifeboat.";draw();}
+ function blocked(x,y){return walls.some(w=>x+p.r>w.x&&x-p.r<w.x+w.w&&y+p.r>w.y&&y-p.r<w.y+w.h);}
+ function draw(){ctx.fillStyle="#102b42";ctx.fillRect(0,0,900,500);ctx.fillStyle="#b99d73";ctx.fillRect(28,28,844,444);ctx.strokeStyle="#d8c5a2";ctx.lineWidth=2;for(let x=40;x<870;x+=30){ctx.beginPath();ctx.moveTo(x,30);ctx.lineTo(x,470);ctx.stroke();}ctx.fillStyle="#405765";ctx.font="bold 18px Arial";ctx.fillText("TITANIC · BOAT DECK",340,48);walls.forEach(w=>{ctx.fillStyle="#53616a";ctx.fillRect(w.x,w.y,w.w,w.h);});ctx.fillStyle="#3fb879";ctx.beginPath();ctx.arc(815,420,31,0,Math.PI*2);ctx.fill();ctx.fillStyle="#123b2a";ctx.font="bold 12px Arial";ctx.fillText("BOAT",800,424);people.forEach(o=>{if(o.saved)return;ctx.fillStyle="#258ac7";ctx.beginPath();ctx.arc(o.x,o.y,10,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.fillRect(o.x-3,o.y-5,6,10);});ctx.fillStyle="#f5c34d";ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();}
+ function finish(win){active=false;status.textContent=win?"RESCUE COMPLETE":"TIME UP";end.textContent=win?"Everyone reached the lifeboat station. Well done, crew.":"Time ran out. Restart and try another route.";if(win&&typeof saveGameBestScore==="function")saveGameBestScore("titanic",6);draw();}
+ function loop(now){if(!active)return;const dt=Math.min(.04,(now-last)/1000||0);last=now;seconds-=dt;let dx=((keys.d||keys.arrowright||touch.right)?1:0)-((keys.a||keys.arrowleft||touch.left)?1:0),dy=((keys.s||keys.arrowdown||touch.down)?1:0)-((keys.w||keys.arrowup||touch.up)?1:0),len=Math.hypot(dx,dy)||1;dx=dx/len*150*dt;dy=dy/len*150*dt;if(!blocked(p.x+dx,p.y))p.x+=dx;if(!blocked(p.x,p.y+dy))p.y+=dy;people.forEach(o=>{if(!o.saved&&Math.hypot(p.x-o.x,p.y-o.y)<25)o.saved=true;});const n=people.filter(o=>o.saved).length;hud.textContent="Passengers: "+n+" / 6";time.textContent="Time: "+Math.max(0,Math.ceil(seconds))+"s";if(n===6&&Math.hypot(p.x-815,p.y-420)<48){finish(true);return;}if(seconds<=0){finish(false);return;}draw();raf=requestAnimationFrame(loop);}
+ function start(){if(raf)cancelAnimationFrame(raf);reset();active=true;status.textContent="Evacuation underway";end.textContent="Stay calm. Find the passengers.";last=performance.now();raf=requestAnimationFrame(loop);}
+ const down=e=>{const k=e.key.toLowerCase();if(k.indexOf("arrow")===0)e.preventDefault();keys[k]=true;},up=e=>{keys[e.key.toLowerCase()]=false;};document.addEventListener("keydown",down);document.addEventListener("keyup",up);holder.querySelector("#titanic-start").addEventListener("click",start);holder.querySelectorAll("[data-titanic]").forEach(b=>{const k=b.dataset.titanic;b.addEventListener("pointerdown",e=>{e.preventDefault();touch[k]=true;});["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,()=>touch[k]=false));});currentGameCleanup=()=>{active=false;if(raf)cancelAnimationFrame(raf);document.removeEventListener("keydown",down);document.removeEventListener("keyup",up);};reset();
 }
 
 /* FUNBLOK MEGA ARCADE: eight playable mini-worlds */
