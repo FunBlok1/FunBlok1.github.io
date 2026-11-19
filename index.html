@@ -791,6 +791,77 @@ body:not(.future-theme) #page-home .panel-title { color:#fff !important; }
 body:not(.future-theme) #page-home #hero :is(h1,p,.fb-hero-note) { color:#fff !important; }
 </style>
 
+<style id="funblok-compact-layout">
+/* FunBlok compact layout polish */
+:root{--fb-space:14px}
+#navlinks{gap:6px!important;flex-wrap:wrap}
+#navlinks a,#navlinks button{padding:8px 11px!important;border-radius:7px!important}
+.page{max-width:1240px;margin-left:auto;margin-right:auto}
+.panel{margin:0 0 16px!important;border-radius:10px!important;overflow:hidden}
+.panel-title{padding:13px 16px!important;letter-spacing:.01em}
+.panel-body{padding:16px!important}
+#players-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;gap:10px!important}
+#gamegrid,#gamegrid2{grid-template-columns:repeat(auto-fill,minmax(155px,1fr))!important;gap:12px!important}
+.gamecard{min-width:0!important;border-radius:9px!important;overflow:hidden}
+.gamecard .thumb{min-height:82px;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:800}
+.gamecard .info{padding:10px 11px 12px!important}
+.gamecard .gname{font-size:13px!important;line-height:1.35}
+.gamecard .plays{font-size:11px!important;line-height:1.45}
+.fb-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))!important;gap:14px!important}
+.fb-game{min-width:0;border-radius:10px!important;overflow:hidden;transition:transform .15s ease,box-shadow .15s ease}
+.fb-game:hover{transform:translateY(-2px)}
+table{width:100%;border-collapse:collapse}
+#page-admin .panel-body,#page-owner .panel-body,#page-coowner .panel-body{overflow-x:auto}
+button,a,input,select,textarea{max-width:100%}
+@media(max-width:720px){
+  #navlinks{display:flex!important;gap:5px!important}
+  #navlinks a,#navlinks button{font-size:12px!important;padding:7px 9px!important}
+  .page{padding-left:10px!important;padding-right:10px!important}
+  .panel-body{padding:12px!important}
+  #gamegrid,#gamegrid2{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  #players-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .fb-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  .fb-game{min-height:0!important}
+  .fb-game-art{min-height:78px!important}
+  #page-admin table,#page-owner table,#page-coowner table{min-width:640px}
+}
+@media(max-width:380px){
+  #gamegrid,#gamegrid2,.fb-grid{grid-template-columns:minmax(0,1fr)!important}
+}
+</style>
+
+<style id="funblok-human-finish">
+/* A little more like a lovingly made game site, less like a glossy template. */
+:root{--fb-ink:#203246;--fb-blue:#07558f;--fb-orange:#f28a24;--fb-paper:#f1f3f5}
+body{background-color:#edf0f2;background-image:linear-gradient(90deg,rgba(20,55,85,.025) 1px,transparent 1px),linear-gradient(rgba(20,55,85,.025) 1px,transparent 1px);background-size:24px 24px;color:#263746}
+#header{background:#fff;border-bottom:4px solid #07558f;box-shadow:0 2px 0 rgba(25,50,70,.07)}
+#logo{letter-spacing:-1.4px;text-shadow:1px 1px 0 #e6edf2}
+#navlinks{align-items:center}
+#navlinks a{transition:background .14s ease,color .14s ease}
+#navlinks a:hover,#navlinks a.active{background:#edf5fb;border-radius:3px 3px 0 0}
+#hero{position:relative;overflow:hidden;background:linear-gradient(115deg,#123b5d 0%,#07558f 72%,#176a91 100%)!important;text-align:left!important}
+#hero:after{content:"";position:absolute;right:5%;bottom:-48px;width:190px;height:190px;opacity:.16;transform:rotate(12deg);background:linear-gradient(90deg,transparent 32%,#fff 32% 36%,transparent 36% 64%,#fff 64% 68%,transparent 68%),linear-gradient(transparent 32%,#fff 32% 36%,transparent 36% 64%,#fff 64% 68%,transparent 68%);border:12px solid #fff;pointer-events:none}
+.fb-hero-inner{position:relative;z-index:1;max-width:760px;margin:0 auto}
+.fb-hero-kicker{letter-spacing:1.4px;font-size:11px;font-weight:800;color:#ffd28a}
+#hero h1{font-size:clamp(30px,5vw,44px);letter-spacing:-1.5px;line-height:1.08}
+#hero p{max-width:560px;font-size:16px;line-height:1.6;color:#e6f1f8}
+.fb-hero-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}
+#fb-fun-zone{background:#fff;border:1px solid #cbd5dc;border-top:4px solid #f28a24;border-radius:4px;padding:19px 20px;margin:0 0 18px;box-shadow:0 2px 0 rgba(30,55,75,.045)}
+#fb-fun-zone .fb-fun-tag{display:inline-block;background:#fff1dc;color:#75430e;border:1px solid #f2d2a4;padding:4px 7px;border-radius:2px;font-size:10px;letter-spacing:1px;font-weight:900}
+#fb-fun-zone h2{font-size:24px;letter-spacing:-.5px;color:#203b50;margin:9px 0 5px}
+#fb-fun-zone p{font-size:14px;line-height:1.55;color:#536575}
+#fb-fun-zone .fb-fun-mascot{font-size:48px;filter:none;transform:rotate(-5deg)}
+#fb-fun-zone button{border-radius:3px;box-shadow:0 2px 0 #06415d;transition:transform .12s ease,filter .12s ease}
+#fb-fun-zone button+button{box-shadow:0 2px 0 #5b2678}
+#fb-fun-zone #fb-fun-result{border:1px dashed #c7d3dc;border-radius:3px;background:#f5f8fa;color:#304a5d;font-weight:600}
+.panel{border:1px solid #cbd3da;border-radius:4px!important;box-shadow:0 2px 0 rgba(30,55,75,.035)}
+.panel-title{background:#07558f;color:#fff;font-size:13px;letter-spacing:.2px}
+.gamecard,.fb-game{border:1px solid #d4dce2!important;box-shadow:0 1px 2px rgba(20,45,65,.06)}
+.gamecard:hover,.fb-game:hover{box-shadow:0 4px 12px rgba(20,45,65,.13)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #f4a340!important;outline-offset:2px}
+@media(max-width:720px){#hero{text-align:center!important}#hero:after{right:-55px;bottom:-85px}#fb-fun-zone{padding:15px}#fb-fun-zone .fb-fun-mascot{font-size:38px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+</style>
 </head>
 <body>
 
@@ -828,19 +899,19 @@ body:not(.future-theme) #page-home #hero :is(h1,p,.fb-hero-note) { color:#fff !i
 <div class="page active" id="page-home">
   <div id="hero" style="margin: -1px -16px 18px;">
     <div class="fb-hero-inner">
-      <span class="fb-hero-kicker">THE BLOCK-BUILDING UNIVERSE</span>
+      <span class="fb-hero-kicker">WELCOME TO FUNBLOK</span>
       <h1>Build. Play. Imagine.</h1>
-      <p>Create worlds, play mini-games, customize your avatar and meet the FunBlok community.</p>
+      <p>Fancy a quick game, or want to build something of your own? There is room for both here.</p>
       <div class="fb-hero-actions">
         <button type="button" class="btn fb-hero-primary" id="fb-hero-play">▶ Play games</button>
         <button type="button" class="btn btn-outline fb-hero-secondary" id="fb-hero-create">▦ Open Studio</button>
         <button type="button" class="btn btn-outline fb-hero-secondary" id="fb-hero-join">＋ Join FunBlok</button>
       </div>
-      <div class="fb-hero-note"><span class="fb-live-dot"></span> Free to explore · Built for players and creators</div>
+      <div class="fb-hero-note"><span class="fb-live-dot"></span> Come for a game. Stay and make something.</div>
     </div>
   </div>
   <section id="fb-fun-zone" aria-label="FunBlok fun zone">
-    <div class="fb-fun-top"><div><span class="fb-fun-tag">🎉 THE FUN ZONE</span><h2>Got 2 minutes? LET'S GO!</h2><p>Can't decide what to play? Let FunBlok pick your next adventure.</p></div><div class="fb-fun-mascot" aria-hidden="true">🤖</div></div>
+    <div class="fb-fun-top"><div><span class="fb-fun-tag">🎉 THE FUN ZONE</span><h2>Not sure what to play?</h2><p>Press the button and see where you end up. No big plan needed.</p></div><div class="fb-fun-mascot" aria-hidden="true">🤖</div></div>
     <div class="fb-fun-actions"><button type="button" id="fb-surprise-game">🎲 Surprise me!</button><button type="button" id="fb-roll-dare">⚡ Roll a silly challenge</button></div>
     <div id="fb-fun-result" role="status" aria-live="polite">Your next adventure is waiting…</div>
   </section>
@@ -862,7 +933,7 @@ body:not(.future-theme) #page-home #hero :is(h1,p,.fb-hero-note) { color:#fff !i
       <div id="event-list"></div>
     </div>
   </div>
-  <div class="ad-banner">Advertisement (placeholder &mdash; not a real ad network)</div>
+  
   <div class="panel">
     <div class="panel-title" style="background:#1b7a4a;">Get FunClub</div>
     <div class="panel-body">
@@ -6392,43 +6463,3 @@ body:not(.future-theme) .page :is(.panel-body,.ud-card,.gamecard,.form-row) { mi
 
 </body>
 </html>
-
-
-<style id="funblok-compact-layout">
-/* FunBlok compact layout polish */
-:root{--fb-space:14px}
-#navlinks{gap:6px!important;flex-wrap:wrap}
-#navlinks a,#navlinks button{padding:8px 11px!important;border-radius:7px!important}
-.page{max-width:1240px;margin-left:auto;margin-right:auto}
-.panel{margin:0 0 16px!important;border-radius:10px!important;overflow:hidden}
-.panel-title{padding:13px 16px!important;letter-spacing:.01em}
-.panel-body{padding:16px!important}
-#players-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;gap:10px!important}
-#gamegrid,#gamegrid2{grid-template-columns:repeat(auto-fill,minmax(155px,1fr))!important;gap:12px!important}
-.gamecard{min-width:0!important;border-radius:9px!important;overflow:hidden}
-.gamecard .thumb{min-height:82px;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:800}
-.gamecard .info{padding:10px 11px 12px!important}
-.gamecard .gname{font-size:13px!important;line-height:1.35}
-.gamecard .plays{font-size:11px!important;line-height:1.45}
-.fb-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))!important;gap:14px!important}
-.fb-game{min-width:0;border-radius:10px!important;overflow:hidden;transition:transform .15s ease,box-shadow .15s ease}
-.fb-game:hover{transform:translateY(-2px)}
-table{width:100%;border-collapse:collapse}
-#page-admin .panel-body,#page-owner .panel-body,#page-coowner .panel-body{overflow-x:auto}
-button,a,input,select,textarea{max-width:100%}
-@media(max-width:720px){
-  #navlinks{display:flex!important;gap:5px!important}
-  #navlinks a,#navlinks button{font-size:12px!important;padding:7px 9px!important}
-  .page{padding-left:10px!important;padding-right:10px!important}
-  .panel-body{padding:12px!important}
-  #gamegrid,#gamegrid2{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
-  #players-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .fb-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
-  .fb-game{min-height:0!important}
-  .fb-game-art{min-height:78px!important}
-  #page-admin table,#page-owner table,#page-coowner table{min-width:640px}
-}
-@media(max-width:380px){
-  #gamegrid,#gamegrid2,.fb-grid{grid-template-columns:minmax(0,1fr)!important}
-}
-</style>
